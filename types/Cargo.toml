@@ -1,0 +1,9 @@
+[package]
+name = "yral-types"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde.workspace = true
+k256 = { version = "0.13.4", default-features = false, features = ["jwk"] }
+ic-agent.workspace = true

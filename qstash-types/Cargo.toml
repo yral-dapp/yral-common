@@ -1,0 +1,9 @@
+[package]
+name = "yral-qstash-types"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde.workspace = true
+types.workspace = true
+candid.workspace = true

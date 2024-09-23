@@ -1,0 +1,30 @@
+[package]
+name = "yral-canisters-client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ic-agent.workspace = true
+candid.workspace = true
+serde.workspace = true
+serde_bytes.workspace = true
+
+[build-dependencies]
+serde.workspace = true
+candid_parser = "0.1.1"
+serde_json.workspace = true
+convert_case = "0.6.0"
+anyhow = "1.0.86"
+
+[features]
+full = ["backend", "sns"]
+backend = ["individual-user", "platform-orchestrator", "post-cache", "user-index"]
+sns = ["sns-governance", "sns-ledger", "sns-root", "sns-swap"]
+individual-user = []
+platform-orchestrator = []
+post-cache = []
+user-index = []
+sns-governance = []
+sns-ledger = []
+sns-root = []
+sns-swap = []

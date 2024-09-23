@@ -1,0 +1,11 @@
+[workspace]
+members = [ "canisters-client", "qstash-types","types"]
+resolver = "2"
+
+[workspace.dependencies]
+serde = { version = "1.0.210", features = ["derive"] }
+serde_bytes = "0.11.15"
+serde_json = "1.0.128"
+ic-agent = { version = "0.38.1", default-features = false }
+types = { package = "yral-types", path = "types" }
+candid = "0.10.10"
