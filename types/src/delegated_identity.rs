@@ -7,13 +7,19 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone)]
 pub struct DelegatedIdentityWire {
     /// raw bytes of delegated identity's public key
-    from_key: Vec<u8>,
+    pub from_key: Vec<u8>,
     /// JWK(JSON Web Key) encoded Secp256k1 secret key
     /// identity allowed to sign on behalf of `from_key`
-    to_secret: JwkEcKey,
+    pub to_secret: JwkEcKey,
     /// Proof of delegation
     /// connecting from_key to `to_secret`
-    delegation_chain: Vec<SignedDelegation>,
+    pub delegation_chain: Vec<SignedDelegation>,
+}
+
+impl std::fmt::Debug for DelegatedIdentityWire {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DelegatedIdentityWire").finish()
+    }
 }
 
 impl TryFrom<DelegatedIdentityWire> for DelegatedIdentity {
