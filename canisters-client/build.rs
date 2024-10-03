@@ -34,6 +34,8 @@ static DID_WHITELIST: LazyLock<HashSet<&str>> = LazyLock::new(|| {
     whitelist.insert("sns_root");
     #[cfg(feature = "sns-swap")]
     whitelist.insert("sns_swap");
+    #[cfg(feature = "sns-index")]
+    whitelist.insert("sns_index");
 
     whitelist
 });
