@@ -67,15 +67,6 @@ type CdaoTokenError = variant {
   Transfer : TransferError;
   Unauthenticated;
 };
-type CfNeuron = record {
-  has_created_neuron_recipes : opt bool;
-  nns_neuron_id : nat64;
-  amount_icp_e8s : nat64;
-};
-type CfParticipant = record {
-  hotkey_principal : text;
-  cf_neurons : vec CfNeuron;
-};
 type ClaimStatus = variant { Unclaimed; Claiming; Claimed };
 type Committed = record {
   total_direct_participation_icp_e8s : opt nat64;
@@ -255,12 +246,12 @@ type NeuronDistribution = record {
   vesting_period_seconds : opt nat64;
 };
 type NeuronsFundNeuron = record {
-  hotkey_principal : opt text;
+  controller : opt principal;
+  hotkeys : opt Principals;
   is_capped : opt bool;
   nns_neuron_id : opt nat64;
   amount_icp_e8s : opt nat64;
 };
-type NeuronsFundParticipants = record { participants : vec CfParticipant };
 type NeuronsFundParticipationConstraints = record {
   coefficient_intervals : vec LinearScalingCoefficient;
   max_neurons_fund_participation_icp_e8s : opt nat64;
@@ -351,6 +342,7 @@ type PostViewStatistics = record {
   average_watch_percentage : nat8;
   threshold_view_count : nat64;
 };
+type Principals = record { principals : vec principal };
 type RejectionCode = variant {
   NoError;
   CanisterError;
@@ -444,7 +436,6 @@ type SnsInitPayload = record {
   transaction_fee_e8s : opt nat64;
   dapp_canisters : opt DappCanisters;
   neurons_fund_participation_constraints : opt NeuronsFundParticipationConstraints;
-  neurons_fund_participants : opt NeuronsFundParticipants;
   max_age_bonus_percentage : opt nat64;
   initial_token_distribution : opt InitialTokenDistribution;
   reward_rate_transition_duration_seconds : opt nat64;
@@ -612,6 +603,7 @@ service : (IndividualUserTemplateInitArgs) -> {
       Result_15,
     ) query;
   get_user_caniser_cycle_balance : () -> (nat) query;
+  get_user_propensity : () -> (float64) query;
   get_user_utility_token_transaction_history_with_pagination : (
       nat64,
       nat64,
@@ -636,6 +628,7 @@ service : (IndividualUserTemplateInitArgs) -> {
   request_airdrop : (principal, opt blob, nat, principal) -> (Result_21);
   return_cycles_to_user_index_canister : (opt nat) -> ();
   save_snapshot_json : () -> (nat32);
+  set_controller_as_subnet_orchestrator : (principal) -> ();
   settle_neurons_fund_participation : (
       SettleNeuronsFundParticipationRequest,
     ) -> (SettleNeuronsFundParticipationResponse);
@@ -665,8 +658,10 @@ service : (IndividualUserTemplateInitArgs) -> {
   update_referrer_details : (UserCanisterDetails) -> (Result_25);
   update_session_type : (SessionType) -> (Result_25);
   update_success_history : (SuccessHistoryItemV1) -> (Result_25);
+  update_user_propensity : (float64) -> (Result_25);
   update_watch_history : (WatchHistoryItem) -> (Result_25);
   update_well_known_principal : (KnownPrincipalType, principal) -> ();
+  upgrade_creator_dao_governance_canisters : (blob) -> (Result_27);
   write_key_value_pair : (nat64, text, text) -> (Result_5);
   write_multiple_key_value_pairs : (nat64, vec record { text; text }) -> (
       Result_6,
