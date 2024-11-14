@@ -1,5 +1,5 @@
 [workspace]
-members = [ "canisters-client", "qstash-types","types"]
+members = [ "canisters-client", "canisters-common", "qstash-types","types", "sns-validation", "grpc-traits"]
 resolver = "2"
 
 [workspace.dependencies]
@@ -8,4 +8,11 @@ serde_bytes = "0.11.15"
 serde_json = "1.0.128"
 ic-agent = { version = "0.38.1", default-features = false }
 types = { package = "yral-types", path = "types" }
+canisters-client = { package = "yral-canisters-client", path = "canisters-client" }
+grpc-traits = { package = "yral-grpc-traits", path = "grpc-traits" }
 candid = "0.10.10"
+url = "2.5.3"
+web-time = "1.0.0"
+thiserror = "2.0.3"
+log = "0.4.22"
+k256 = { version = "0.13.4", default-features = false, features = ["jwk"] }

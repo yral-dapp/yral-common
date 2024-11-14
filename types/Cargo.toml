@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 serde.workspace = true
-k256 = { version = "0.13.4", default-features = false, features = ["jwk"] }
+k256 = { workspace = true, default-features = false, features = ["jwk"] }
 ic-agent.workspace = true
