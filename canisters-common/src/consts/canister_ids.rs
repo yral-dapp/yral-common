@@ -4,5 +4,7 @@ pub use canisters_client::ic::*;
 pub use canisters_client::local::*;
 
 #[cfg(not(feature = "local"))]
-pub static FALLBACK_USER_INDEX: std::sync::LazyLock<Principal> =
-    LazyLock::new(|| candid::Principal::from_text("rimrc-piaaa-aaaao-aaljq-cai").unwrap());
+pub static FALLBACK_USER_INDEX: std::sync::LazyLock<candid::Principal> =
+    std::sync::LazyLock::new(|| {
+        candid::Principal::from_text("rimrc-piaaa-aaaao-aaljq-cai").unwrap()
+    });

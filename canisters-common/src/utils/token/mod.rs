@@ -1,11 +1,19 @@
+use std::{fmt::Display, str::FromStr};
+
 use balance::{TokenBalance, TokenBalanceOrClaiming};
 use candid::{Nat, Principal};
 use grpc_traits::TokenInfoProvider;
+use ic_agent::export::PrincipalError;
 
-use crate::{Canisters, Result};
+use crate::{
+    consts::{
+        CKBTC_INDEX, CKBTC_LEDGER, CKUSDC_INDEX, CKUSDC_LEDGER, SUPPORTED_NON_YRAL_TOKENS_ROOT,
+    },
+    Canisters, Result,
+};
 use canisters_client::{
     sns_governance::{DissolveState, GetMetadataArg, ListNeurons},
-    sns_ledger::{Account as LedgerAccount, MetadataValue},
+    sns_ledger::{self, Account as LedgerAccount, MetadataValue},
     sns_root::ListSnsCanistersArg,
 };
 use serde::{Deserialize, Serialize};
@@ -27,7 +35,59 @@ pub struct TokenMetadata {
     pub is_nsfw: bool,
 }
 
+#[derive(Clone, PartialEq, Serialize, Deserialize, Hash, Eq, Debug)]
+pub enum RootType {
+    BTC { ledger: Principal, index: Principal },
+    USDC { ledger: Principal, index: Principal },
+    Other(Principal),
+}
+
+impl FromStr for RootType {
+    type Err = PrincipalError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "btc" => Ok(Self::BTC {
+                ledger: Principal::from_text(CKBTC_LEDGER)?,
+                index: Principal::from_text(CKBTC_INDEX)?,
+            }),
+            "usdc" => Ok(Self::USDC {
+                ledger: Principal::from_text(CKUSDC_LEDGER)?,
+                index: Principal::from_text(CKUSDC_INDEX)?,
+            }),
+            _ => Ok(Self::Other(Principal::from_text(s)?)),
+        }
+    }
+}
+
+impl Display for RootType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::BTC { .. } => f.write_str("btc"),
+            Self::USDC { .. } => f.write_str("usdc"),
+            Self::Other(principal) => f.write_str(&principal.to_text()),
+        }
+    }
+}
+
 impl<const A: bool> Canisters<A> {
+    pub async fn token_metadata_by_root_type(
+        &self,
+        nsfw_detector: &impl TokenInfoProvider,
+        user_principal: Option<Principal>,
+        root_type: RootType,
+    ) -> Result<Option<TokenMetadata>> {
+        match root_type {
+            RootType::BTC { ledger, index } | RootType::USDC { ledger, index } => {
+                self.get_ck_metadata(user_principal, ledger, index).await
+            }
+            RootType::Other(root) => {
+                self.token_metadata_by_root(nsfw_detector, user_principal, root)
+                    .await
+            }
+        }
+    }
+
     pub async fn token_metadata_by_root(
         &self,
         nsfw_detector: &impl TokenInfoProvider,
@@ -263,5 +323,72 @@ impl<const A: bool> Canisters<A> {
         )));
 
         Ok(Some(res))
+    }
+
+    pub async fn transfer_token_to_user_principal(
+        &self,
+        destination: Principal,
+        ledger_id: Principal,
+        root_id: Principal,
+        amount: TokenBalance,
+    ) -> Result<()> {
+        let sns_ledger = self.sns_ledger(ledger_id).await;
+        let res = sns_ledger
+            .icrc_1_transfer(sns_ledger::TransferArg {
+                memo: Some(vec![0].into()),
+                amount: amount.clone().into(),
+                fee: None,
+                from_subaccount: None,
+                to: LedgerAccount {
+                    owner: destination,
+                    subaccount: None,
+                },
+                created_at_time: None,
+            })
+            .await?;
+        log::debug!("transfer res: {:?}", res);
+
+        let destination_canister_id = self
+            .get_individual_canister_by_user_principal(destination)
+            .await?;
+        let Some(destination_canister_id) = destination_canister_id else {
+            return Ok(());
+        };
+        let is_non_yral_token = SUPPORTED_NON_YRAL_TOKENS_ROOT
+            .iter()
+            .any(|&token_root| token_root == root_id.to_text());
+        if is_non_yral_token {
+            return Ok(());
+        }
+
+        let destination_canister = self.individual_user(destination_canister_id).await;
+        let res = destination_canister.add_token(root_id).await?;
+        log::debug!("add_token res {res:?}");
+
+        Ok(())
+    }
+
+    pub async fn transfer_ck_token_to_user_principal(
+        &self,
+        destination: Principal,
+        ledger_id: Principal,
+        amount: TokenBalance,
+    ) -> Result<()> {
+        let sns_ledger = self.sns_ledger(ledger_id).await;
+        let res = sns_ledger
+            .icrc_1_transfer(sns_ledger::TransferArg {
+                memo: Some(vec![0].into()),
+                amount: amount.clone().into(),
+                fee: None,
+                from_subaccount: None,
+                to: LedgerAccount {
+                    owner: destination,
+                    subaccount: None,
+                },
+                created_at_time: None,
+            })
+            .await?;
+        log::debug!("transfer res: {:?}", res);
+        Ok(())
     }
 }

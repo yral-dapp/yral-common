@@ -299,7 +299,7 @@ impl<const A: bool> Canisters<A> {
             use consts::canister_ids::FALLBACK_USER_INDEX;
             use std::collections::HashSet;
             // TODO: this is temporary
-            let blacklisted = HashSet::from([FALLBACK_USER_INDEX.clone()]);
+            let blacklisted = HashSet::from([*FALLBACK_USER_INDEX]);
             let orchestrator = self.orchestrator().await;
             Ok(orchestrator
                 .get_all_available_subnet_orchestrators()

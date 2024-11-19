@@ -1,4 +1,4 @@
-use std::cell::LazyLock;
+use std::sync::LazyLock;
 use url::Url;
 
 pub static METADATA_API_BASE: LazyLock<Url> =
