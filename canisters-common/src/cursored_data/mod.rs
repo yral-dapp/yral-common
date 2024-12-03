@@ -25,5 +25,5 @@ pub trait CursoredDataProvider {
         &self,
         start: usize,
         end: usize,
-    ) -> impl Future<Output = Result<PageEntry<Self::Data>, Self::Error>>;
+    ) -> impl Future<Output = Result<PageEntry<Self::Data>, Self::Error>> + Send;
 }
