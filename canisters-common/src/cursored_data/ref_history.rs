@@ -28,7 +28,7 @@ impl CursoredDataProvider for ReferralHistory {
     type Data = HistoryDetails;
     type Error = AgentError;
 
-    async fn get_by_cursor(
+    async fn get_by_cursor_inner(
         &self,
         from: usize,
         end: usize,

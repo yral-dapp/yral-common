@@ -262,7 +262,7 @@ impl CursoredDataProvider for TxnHistory {
     type Data = TxnInfoWallet;
     type Error = Error;
 
-    async fn get_by_cursor(&self, start: usize, end: usize) -> Result<PageEntry<Self::Data>> {
+    async fn get_by_cursor_inner(&self, start: usize, end: usize) -> Result<PageEntry<Self::Data>> {
         match self.source {
             IndexOrLedger::Ledger(ledger_id) => {
                 self.get_by_cursor_ledger(ledger_id, start, end).await
