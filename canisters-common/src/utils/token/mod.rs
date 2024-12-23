@@ -23,7 +23,7 @@ pub mod balance;
 use canisters_client::individual_user_template::ClaimStatus;
 use canisters_client::sns_root::ListSnsCanistersResponse;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TokenMetadata {
     pub logo_b64: String,
     pub name: String,
