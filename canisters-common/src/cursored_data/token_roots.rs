@@ -90,7 +90,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
     type Data = RootType;
     type Error = Error;
 
-    async fn get_by_cursor_inner(&self, start: usize, end: usize) -> Result<PageEntry<Self::Data>> {
+    async fn get_by_cursor(&self, start: usize, end: usize) -> Result<PageEntry<Self::Data>> {
         let user = self.canisters.individual_user(self.user_canister).await;
         let tokens = user
             .get_token_roots_of_this_user_with_pagination_cursor(start as u64, end as u64)

@@ -32,7 +32,7 @@ impl CursoredDataProvider for VotesProvider {
     type Data = VoteDetails;
     type Error = Error;
 
-    async fn get_by_cursor_inner(
+    async fn get_by_cursor(
         &self,
         start: usize,
         end: usize,
