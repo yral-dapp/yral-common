@@ -39,8 +39,6 @@ pub struct TokenMetadata {
     pub is_nsfw: bool,
     #[serde(default)]
     pub token_owner: Option<Principal>,
-    #[serde(default)]
-    pub is_airdrop_claimed: Option<bool>,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Hash, Eq, Debug)]
@@ -154,15 +152,6 @@ impl<const A: bool> Canisters<A> {
 
         let token_owner = self.get_token_owner(token_root).await?;
 
-        let is_airdrop_claimed = {
-            match (token_owner, user_principal) {
-                (Some(token_owner), Some(user_principal)) => Some(
-                    self.get_airdrop_status(token_owner, token_root, user_principal)
-                        .await?,
-                ),
-                _ => None,
-            }
-        };
         let mut token_metadata = TokenMetadata {
             logo_b64: metadata.logo.unwrap_or_default(),
             name: metadata.name.unwrap_or_default(),
@@ -176,7 +165,6 @@ impl<const A: bool> Canisters<A> {
             decimals,
             is_nsfw,
             token_owner,
-            is_airdrop_claimed,
         };
 
         if let Some(user_principal) = user_principal {
@@ -326,7 +314,6 @@ impl<const A: bool> Canisters<A> {
             decimals,
             is_nsfw: false,
             token_owner: None,
-            is_airdrop_claimed: None,
         };
         let Some(user_principal) = user_principal else {
             return Ok(Some(res));
@@ -432,10 +419,11 @@ impl<const A: bool> Canisters<A> {
                         .airdrop_info
                         .principals_who_successfully_claimed
                         .iter()
-                        .any(|claimee| *claimee == (user_principal, ClaimStatus::Claimed))
+                        .any(|(principal, status)| principal == &user_principal && *status == ClaimStatus::Claimed)
             });
         Ok(is_airdrop_claimed)
     }
+
     pub async fn get_token_owner(&self, token_root: Principal) -> Result<Option<Principal>> {
         let root = self.sns_root(token_root).await;
         let ListSnsCanistersResponse { swap, .. } =
