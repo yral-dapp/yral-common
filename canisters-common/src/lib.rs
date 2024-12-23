@@ -3,14 +3,7 @@ use std::sync::Arc;
 use agent_wrapper::AgentWrapper;
 use candid::{Decode, Principal};
 use canisters_client::{
-    individual_user_template::{IndividualUserTemplate, Result25, Result7, UserCanisterDetails},
-    platform_orchestrator::PlatformOrchestrator,
-    post_cache::PostCache,
-    sns_governance::SnsGovernance,
-    sns_index::SnsIndex,
-    sns_ledger::SnsLedger,
-    sns_root::SnsRoot,
-    user_index::{Result1, UserIndex},
+    individual_user_template::{IndividualUserTemplate, Result25, Result7, UserCanisterDetails}, platform_orchestrator::PlatformOrchestrator, post_cache::PostCache, sns_governance::SnsGovernance, sns_index::SnsIndex, sns_ledger::SnsLedger, sns_root::SnsRoot, sns_swap::SnsSwap, user_index::{Result1, UserIndex}
 };
 use consts::{
     canister_ids::{PLATFORM_ORCHESTRATOR_ID, POST_CACHE_ID},
@@ -286,6 +279,11 @@ impl<const A: bool> Canisters<A> {
     pub async fn sns_root(&self, canister_id: Principal) -> SnsRoot<'_> {
         let agent = self.agent.get_agent().await;
         SnsRoot(canister_id, agent)
+    }
+
+    pub async fn sns_swap(&self, canister_id: Principal) -> SnsSwap<'_> {
+        let agent = self.agent.get_agent().await;
+        SnsSwap(canister_id, agent)
     }
 
     async fn subnet_indexes(&self) -> Result<Vec<Principal>> {
