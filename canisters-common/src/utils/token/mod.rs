@@ -37,7 +37,9 @@ pub struct TokenMetadata {
     pub decimals: u8,
     #[serde(default)]
     pub is_nsfw: bool,
+    #[serde(default)]
     pub token_owner: Option<Principal>,
+    #[serde(default)]
     pub is_airdrop_claimed: Option<bool>,
 }
 
