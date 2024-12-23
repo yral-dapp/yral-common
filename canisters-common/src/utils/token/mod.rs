@@ -1,3 +1,4 @@
+use canisters_client::sns_swap::GetInitArg;
 use std::{fmt::Display, str::FromStr};
 
 use balance::{TokenBalance, TokenBalanceOrClaiming};
@@ -9,7 +10,7 @@ use crate::{
     consts::{
         CKBTC_INDEX, CKBTC_LEDGER, CKUSDC_INDEX, CKUSDC_LEDGER, SUPPORTED_NON_YRAL_TOKENS_ROOT,
     },
-    Canisters, Result,
+    error, Canisters, Result,
 };
 use canisters_client::{
     sns_governance::{DissolveState, GetMetadataArg, ListNeurons},
@@ -18,6 +19,9 @@ use canisters_client::{
 };
 use serde::{Deserialize, Serialize};
 pub mod balance;
+
+use canisters_client::individual_user_template::ClaimStatus;
+use canisters_client::sns_root::ListSnsCanistersResponse;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct TokenMetadata {
@@ -33,6 +37,8 @@ pub struct TokenMetadata {
     pub decimals: u8,
     #[serde(default)]
     pub is_nsfw: bool,
+    pub token_owner: Option<Principal>,
+    pub is_airdrop_claimed: Option<bool>,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Hash, Eq, Debug)]
@@ -144,6 +150,17 @@ impl<const A: bool> Canisters<A> {
             .map(|token_info| token_info.is_nsfw)
             .unwrap_or(false);
 
+        let token_owner = self.get_token_owner(token_root).await?;
+
+        let is_airdrop_claimed = {
+            match (token_owner, user_principal) {
+                (Some(token_owner), Some(user_principal)) => Some(
+                    self.get_airdrop_status(token_owner, token_root, user_principal)
+                        .await?,
+                ),
+                _ => None,
+            }
+        };
         let mut token_metadata = TokenMetadata {
             logo_b64: metadata.logo.unwrap_or_default(),
             name: metadata.name.unwrap_or_default(),
@@ -156,6 +173,8 @@ impl<const A: bool> Canisters<A> {
             index,
             decimals,
             is_nsfw,
+            token_owner,
+            is_airdrop_claimed,
         };
 
         if let Some(user_principal) = user_principal {
@@ -304,6 +323,8 @@ impl<const A: bool> Canisters<A> {
             index,
             decimals,
             is_nsfw: false,
+            token_owner: None,
+            is_airdrop_claimed: None,
         };
         let Some(user_principal) = user_principal else {
             return Ok(Some(res));
@@ -390,5 +411,50 @@ impl<const A: bool> Canisters<A> {
             .await?;
         log::debug!("transfer res: {:?}", res);
         Ok(())
+    }
+
+    pub async fn get_airdrop_status(
+        &self,
+        token_owner: Principal,
+        token_root: Principal,
+        user_principal: Principal,
+    ) -> Result<bool> {
+        let token_owner = self.individual_user(token_owner).await;
+        let is_airdrop_claimed = token_owner
+            .deployed_cdao_canisters()
+            .await?
+            .into_iter()
+            .any(|token| {
+                token.root == token_root
+                    && token
+                        .airdrop_info
+                        .principals_who_successfully_claimed
+                        .iter()
+                        .any(|claimee| *claimee == (user_principal, ClaimStatus::Claimed))
+            });
+        Ok(is_airdrop_claimed)
+    }
+    pub async fn get_token_owner(&self, token_root: Principal) -> Result<Option<Principal>> {
+        let root = self.sns_root(token_root).await;
+        let ListSnsCanistersResponse { swap, .. } =
+            root.list_sns_canisters(ListSnsCanistersArg {}).await?;
+
+        let swap = self.sns_swap(swap.unwrap()).await;
+
+        let init = swap.get_init(GetInitArg {}).await?;
+
+        let token_owner_canister_id: Option<Principal> = init
+            .init
+            .unwrap()
+            .fallback_controller_principal_ids
+            .into_iter()
+            .filter(|controller| controller.ends_with("-cai"))
+            .collect::<Vec<_>>()
+            .get(0)
+            .map(|controller| Principal::from_text(controller))
+            .transpose()
+            .map_err(|e| error::Error::YralCanister(e.to_string()))?;
+
+        Ok(token_owner_canister_id)
     }
 }
