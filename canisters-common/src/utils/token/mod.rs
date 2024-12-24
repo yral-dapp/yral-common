@@ -38,7 +38,7 @@ pub struct TokenMetadata {
     #[serde(default)]
     pub is_nsfw: bool,
     #[serde(default)]
-    pub token_owner: Option<Principal>,
+    pub token_owner: Option<TokenOwner>,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Hash, Eq, Debug)]
@@ -419,12 +419,14 @@ impl<const A: bool> Canisters<A> {
                         .airdrop_info
                         .principals_who_successfully_claimed
                         .iter()
-                        .any(|(principal, status)| principal == &user_principal && *status == ClaimStatus::Claimed)
+                        .any(|(principal, status)| {
+                            principal == &user_principal && *status == ClaimStatus::Claimed
+                        })
             });
         Ok(is_airdrop_claimed)
     }
 
-    pub async fn get_token_owner(&self, token_root: Principal) -> Result<Option<Principal>> {
+    pub async fn get_token_owner(&self, token_root: Principal) -> Result<Option<TokenOwner>> {
         let root = self.sns_root(token_root).await;
         let ListSnsCanistersResponse { swap, .. } =
             root.list_sns_canisters(ListSnsCanistersArg {}).await?;
@@ -433,18 +435,37 @@ impl<const A: bool> Canisters<A> {
 
         let init = swap.get_init(GetInitArg {}).await?;
 
-        let token_owner_canister_id: Option<Principal> = init
+        let token_owner_details = init
             .init
             .unwrap()
             .fallback_controller_principal_ids
             .into_iter()
-            .filter(|controller| controller.ends_with("-cai"))
-            .collect::<Vec<_>>()
-            .get(0)
+            .collect::<Vec<_>>();
+
+        let canister_id: Option<Principal> = token_owner_details
+            .iter()
+            .find(|controller| controller.ends_with("-cai"))
             .map(|controller| Principal::from_text(controller))
             .transpose()
             .map_err(|e| error::Error::YralCanister(e.to_string()))?;
-
-        Ok(token_owner_canister_id)
+        let principal_id: Option<Principal> = token_owner_details
+            .iter()
+            .find(|controller| !controller.ends_with("-cai"))
+            .map(|controller| Principal::from_text(controller))
+            .transpose()
+            .map_err(|e| error::Error::YralCanister(e.to_string()))?;
+        match (canister_id, principal_id) {
+            (Some(canister_id), Some(principal_id)) => Ok(Some(TokenOwner {
+                principal_id,
+                canister_id,
+            })),
+            _ => Ok(None),
+        }
     }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TokenOwner {
+    principal_id: Principal,
+    canister_id: Principal,
 }
