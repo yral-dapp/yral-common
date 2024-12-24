@@ -466,6 +466,6 @@ impl<const A: bool> Canisters<A> {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TokenOwner {
-    principal_id: Principal,
-    canister_id: Principal,
+    pub principal_id: Principal,
+    pub canister_id: Principal,
 }
