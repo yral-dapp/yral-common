@@ -46,7 +46,6 @@ pub enum RootType {
     BTC { ledger: Principal, index: Principal },
     USDC { ledger: Principal, index: Principal },
     Other(Principal),
-    COYNS,
 }
 
 impl FromStr for RootType {
@@ -72,7 +71,6 @@ impl Display for RootType {
         match self {
             Self::BTC { .. } => f.write_str("btc"),
             Self::USDC { .. } => f.write_str("usdc"),
-            Self::COYNS => f.write_str("coyns"),
             Self::Other(principal) => f.write_str(&principal.to_text()),
         }
     }
@@ -92,31 +90,6 @@ impl<const A: bool> Canisters<A> {
             RootType::Other(root) => {
                 self.token_metadata_by_root(nsfw_detector, user_principal, root)
                     .await
-            }
-            RootType::COYNS => {
-                let Some(user_principal) = user_principal else {
-                    return Ok(None);
-                };
-                let user = self.individual_user(user_principal).await;
-
-                let bal = user.get_utility_token_balance().await.unwrap();
-
-                Ok(Some(TokenMetadata {
-                    logo_b64: "/img/coyns.png".to_string(),
-                    name: "COYNS".to_string(),
-                    description: "".to_string(),
-                    symbol: "COYNS".to_string(),
-                    balance: Some(TokenBalanceOrClaiming::new(TokenBalance::new_cdao(
-                        bal.into(),
-                    ))),
-                    fees: TokenBalance::new_cdao(0u32.into()),
-                    root: None,
-                    ledger: Principal::anonymous(),
-                    index: Principal::anonymous(),
-                    decimals: 8,
-                    is_nsfw: false,
-                    token_owner: None,
-                }))
             }
         }
     }
