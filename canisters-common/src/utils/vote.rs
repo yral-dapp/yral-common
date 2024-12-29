@@ -1,6 +1,6 @@
 use candid::Principal;
 use canisters_client::individual_user_template::{
-    BetDirection, BetOutcomeForBetMaker, BettingStatus, PlaceBetArg, PlacedBetDetail, Result3,
+    BetDirection, BetOutcomeForBetMaker, BettingStatus, PlaceBetArg, PlacedBetDetail, Result4,
 };
 use serde::{Deserialize, Serialize};
 use web_time::Duration;
@@ -115,8 +115,8 @@ impl Canisters<true> {
         let res = user.bet_on_currently_viewing_post(place_bet_arg).await?;
 
         let betting_status = match res {
-            Result3::Ok(p) => p,
-            Result3::Err(e) => {
+            Result4::Ok(p) => p,
+            Result4::Err(e) => {
                 // todo send event that betting failed
                 return Err(Error::YralCanister(format!(
                     "bet_on_currently_viewing_post error {e:?}"

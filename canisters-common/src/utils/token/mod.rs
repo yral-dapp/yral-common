@@ -482,13 +482,13 @@ impl<const A: bool> Canisters<A> {
         let canister_id: Option<Principal> = token_owner_details
             .iter()
             .find(|controller| controller.ends_with("-cai"))
-            .map(|controller| Principal::from_text(controller))
+            .map(Principal::from_text)
             .transpose()
             .map_err(|e| error::Error::YralCanister(e.to_string()))?;
         let principal_id: Option<Principal> = token_owner_details
             .iter()
             .find(|controller| !controller.ends_with("-cai"))
-            .map(|controller| Principal::from_text(controller))
+            .map(Principal::from_text)
             .transpose()
             .map_err(|e| error::Error::YralCanister(e.to_string()))?;
         match (canister_id, principal_id) {

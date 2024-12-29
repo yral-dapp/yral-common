@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use candid::Principal;
-use canisters_client::individual_user_template::Result15;
+use canisters_client::individual_user_template::Result16;
 use futures_util::{
     future,
     stream::{self, FuturesOrdered, FuturesUnordered},
@@ -106,7 +106,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
 
         let mut tokens_fetched = 0;
         let mut tokens: Vec<TokenListResponse> = match tokens {
-            Result15::Ok(v) => {
+            Result16::Ok(v) => {
                 tokens_fetched = v.len();
                 v.into_iter()
                     .map(|t| async move {
@@ -143,9 +143,9 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                     .collect::<Vec<TokenListResponse>>()
                     .await
             }
-            Result15::Err(_) => vec![],
+            Result16::Err(_) => vec![],
         };
-        
+
         println!("{tokens_fetched}, {}, {}", end - start, tokens.len());
         let list_end = tokens_fetched < end - start;
 
@@ -188,15 +188,16 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                                 Some(self.user_principal),
                                 root_type.clone(),
                             )
-                            .await.ok()??;
+                            .await
+                            .ok()??;
 
                         Some(TokenListResponse {
                             root: root_type,
                             airdrop_claimed: true,
                             token_metadata: metadata,
                         })
-                    },
-                    _ => None
+                    }
+                    _ => None,
                 }
             })
             .collect::<Vec<_>>()
