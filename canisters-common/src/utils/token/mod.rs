@@ -1,3 +1,4 @@
+use canisters_client::sns_swap::GetInitArg;
 use std::{fmt::Display, str::FromStr};
 
 use balance::{TokenBalance, TokenBalanceOrClaiming};
@@ -9,7 +10,7 @@ use crate::{
     consts::{
         CKBTC_INDEX, CKBTC_LEDGER, CKUSDC_INDEX, CKUSDC_LEDGER, SUPPORTED_NON_YRAL_TOKENS_ROOT,
     },
-    Canisters, Result,
+    error, Canisters, Result,
 };
 use canisters_client::{
     sns_governance::{DissolveState, GetMetadataArg, ListNeurons},
@@ -19,7 +20,10 @@ use canisters_client::{
 use serde::{Deserialize, Serialize};
 pub mod balance;
 
-#[derive(Serialize, Deserialize, Clone)]
+use canisters_client::individual_user_template::ClaimStatus;
+use canisters_client::sns_root::ListSnsCanistersResponse;
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TokenMetadata {
     pub logo_b64: String,
     pub name: String,
@@ -33,6 +37,8 @@ pub struct TokenMetadata {
     pub decimals: u8,
     #[serde(default)]
     pub is_nsfw: bool,
+    #[serde(default)]
+    pub token_owner: Option<TokenOwner>,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Hash, Eq, Debug)]
@@ -144,6 +150,8 @@ impl<const A: bool> Canisters<A> {
             .map(|token_info| token_info.is_nsfw)
             .unwrap_or(false);
 
+        let token_owner = self.get_token_owner(token_root).await?;
+
         let mut token_metadata = TokenMetadata {
             logo_b64: metadata.logo.unwrap_or_default(),
             name: metadata.name.unwrap_or_default(),
@@ -156,6 +164,7 @@ impl<const A: bool> Canisters<A> {
             index,
             decimals,
             is_nsfw,
+            token_owner,
         };
 
         if let Some(user_principal) = user_principal {
@@ -304,6 +313,7 @@ impl<const A: bool> Canisters<A> {
             index,
             decimals,
             is_nsfw: false,
+            token_owner: None,
         };
         let Some(user_principal) = user_principal else {
             return Ok(Some(res));
@@ -391,4 +401,71 @@ impl<const A: bool> Canisters<A> {
         log::debug!("transfer res: {:?}", res);
         Ok(())
     }
+
+    pub async fn get_airdrop_status(
+        &self,
+        token_owner: Principal,
+        token_root: Principal,
+        user_principal: Principal,
+    ) -> Result<bool> {
+        let token_owner = self.individual_user(token_owner).await;
+        let is_airdrop_claimed = token_owner
+            .deployed_cdao_canisters()
+            .await?
+            .into_iter()
+            .any(|token| {
+                token.root == token_root
+                    && token
+                        .airdrop_info
+                        .principals_who_successfully_claimed
+                        .iter()
+                        .any(|(principal, status)| {
+                            principal == &user_principal && *status == ClaimStatus::Claimed
+                        })
+            });
+        Ok(is_airdrop_claimed)
+    }
+
+    pub async fn get_token_owner(&self, token_root: Principal) -> Result<Option<TokenOwner>> {
+        let root = self.sns_root(token_root).await;
+        let ListSnsCanistersResponse { swap, .. } =
+            root.list_sns_canisters(ListSnsCanistersArg {}).await?;
+
+        let swap = self.sns_swap(swap.unwrap()).await;
+
+        let init = swap.get_init(GetInitArg {}).await?;
+
+        let token_owner_details = init
+            .init
+            .unwrap()
+            .fallback_controller_principal_ids
+            .into_iter()
+            .collect::<Vec<_>>();
+
+        let canister_id: Option<Principal> = token_owner_details
+            .iter()
+            .find(|controller| controller.ends_with("-cai"))
+            .map(|controller| Principal::from_text(controller))
+            .transpose()
+            .map_err(|e| error::Error::YralCanister(e.to_string()))?;
+        let principal_id: Option<Principal> = token_owner_details
+            .iter()
+            .find(|controller| !controller.ends_with("-cai"))
+            .map(|controller| Principal::from_text(controller))
+            .transpose()
+            .map_err(|e| error::Error::YralCanister(e.to_string()))?;
+        match (canister_id, principal_id) {
+            (Some(canister_id), Some(principal_id)) => Ok(Some(TokenOwner {
+                principal_id,
+                canister_id,
+            })),
+            _ => Ok(None),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TokenOwner {
+    pub principal_id: Principal,
+    pub canister_id: Principal,
 }
