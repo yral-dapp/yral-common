@@ -147,7 +147,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
         };
         
         println!("{tokens_fetched}, {}, {}", end - start, tokens.len());
-        let list_end = tokens_fetched == 0;
+        let list_end = tokens_fetched < end - start;
 
         if start == 0 {
             let mut rep = stream::iter(
