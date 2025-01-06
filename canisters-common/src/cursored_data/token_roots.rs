@@ -1,20 +1,20 @@
 use std::str::FromStr;
 
-use candid::{Nat, Principal};
-use canisters_client::{
-    individual_user_template::Result15,
-    sns_ledger::{self, SnsLedger},
-};
+use candid::Principal;
+use canisters_client::individual_user_template::Result15;
 use futures_util::{
     future,
-    stream::{self, FuturesOrdered},
+    stream::{self, FuturesOrdered, FuturesUnordered},
     StreamExt,
 };
 use grpc_traits::TokenInfoProvider;
 
 use crate::{
     consts::SUPPORTED_NON_YRAL_TOKENS_ROOT,
-    utils::token::{RootType, TokenMetadata},
+    utils::token::{
+        balance::{TokenBalance, TokenBalanceOrClaiming},
+        RootType, TokenMetadata,
+    },
     Canisters, Error, Result,
 };
 
@@ -30,27 +30,17 @@ impl KeyedData for RootType {
 
 #[derive(Clone)]
 pub struct TokenRootList<TkInfo: TokenInfoProvider> {
-    pub canisters: Canisters<false>,
+    pub canisters: Canisters<true>,
     pub user_canister: Principal,
     pub user_principal: Principal,
     pub nsfw_detector: TkInfo,
 }
 
-async fn get_balance<'a>(user_principal: Principal, ledger: &SnsLedger<'a>) -> Option<Nat> {
-    ledger
-        .icrc_1_balance_of(sns_ledger::Account {
-            owner: user_principal,
-            subaccount: None,
-        })
-        .await
-        .ok()
-}
-
 pub async fn eligible_non_yral_supported_tokens(
-    cans: &Canisters<false>,
+    cans: &Canisters<true>,
     nsfw_detector: &impl TokenInfoProvider,
     user_principal: Principal,
-) -> Result<Vec<RootType>> {
+) -> Result<Vec<TokenListResponse>> {
     let tasks = SUPPORTED_NON_YRAL_TOKENS_ROOT
         .iter()
         .map(|&token_root| async move {
@@ -63,21 +53,23 @@ pub async fn eligible_non_yral_supported_tokens(
         })
         .collect::<FuturesOrdered<_>>()
         .filter_map(|res| {
-            let Some((
-                token_root,
-                Some(TokenMetadata {
-                    balance: Some(balance),
-                    ..
-                }),
-            )) = res
-            else {
+            let Some((token_root, Some(metadata))) = res else {
                 return future::ready(None);
             };
-            if balance
-                .map_balance_ref(|b| b.e8s > 0u64)
-                .unwrap_or_default()
-            {
-                return future::ready(Some(RootType::Other(token_root)));
+
+            if let Some(balance) = &metadata.balance {
+                if balance
+                    .map_balance_ref(|b| b.e8s > 0u64)
+                    .unwrap_or_default()
+                {
+                    return future::ready(Some(TokenListResponse {
+                        root: RootType::Other(token_root),
+                        airdrop_claimed: true,
+                        token_metadata: metadata,
+                    }));
+                }
+            } else {
+                return future::ready(None);
             }
 
             future::ready(None)
@@ -86,8 +78,23 @@ pub async fn eligible_non_yral_supported_tokens(
     Ok(tasks.collect().await)
 }
 
+#[derive(Clone)]
+pub struct TokenListResponse {
+    pub root: RootType,
+    pub airdrop_claimed: bool,
+    pub token_metadata: TokenMetadata,
+}
+
+impl KeyedData for TokenListResponse {
+    type Key = RootType;
+
+    fn key(&self) -> Self::Key {
+        self.root.clone()
+    }
+}
+
 impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRootList<TkInfo> {
-    type Data = RootType;
+    type Data = TokenListResponse;
     type Error = Error;
 
     async fn get_by_cursor(&self, start: usize, end: usize) -> Result<PageEntry<Self::Data>> {
@@ -95,46 +102,127 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
         let tokens = user
             .get_token_roots_of_this_user_with_pagination_cursor(start as u64, end as u64)
             .await?;
-        let mut tokens: Vec<RootType> = match tokens {
-            Result15::Ok(v) => v
-                .into_iter()
-                .map(|t| RootType::from_str(&t.to_text()).unwrap())
-                .collect(),
+        let mut tokens: Vec<TokenListResponse> = match tokens {
+            Result15::Ok(v) => {
+                v.into_iter()
+                    .map(|t| async move {
+                        let root = RootType::from_str(&t.to_text()).unwrap();
+
+                        let metadata = self
+                            .canisters
+                            .token_metadata_by_root_type(
+                                &self.nsfw_detector,
+                                Some(self.user_principal),
+                                root.clone(),
+                            )
+                            .await
+                            .ok()??;
+
+                        let airdrop_claimed = self
+                            .canisters
+                            .get_airdrop_status(
+                                metadata.token_owner.clone().unwrap().canister_id,
+                                Principal::from_text(root.to_string()).unwrap(),
+                                self.canisters.user_principal(),
+                            )
+                            .await
+                            .ok()?;
+
+                        Some(TokenListResponse {
+                            root,
+                            airdrop_claimed,
+                            token_metadata: metadata,
+                        })
+                    })
+                    .collect::<FuturesUnordered<_>>()
+                    .filter_map(|x| async { x })
+                    .collect::<Vec<TokenListResponse>>()
+                    .await
+            }
             Result15::Err(_) => vec![],
         };
 
         let list_end = tokens.len() < (end - start);
 
         if start == 0 {
-            let mut rep = stream::iter([
-                RootType::from_str("btc").unwrap(),
-                RootType::from_str("usdc").unwrap(),
-            ])
+            let mut rep = stream::iter(
+                [
+                    RootType::from_str("btc").unwrap(),
+                    RootType::from_str("usdc").unwrap(),
+                ]
+                .into_iter(),
+            )
             .filter_map(|root_type| async move {
                 let cans = &self.canisters;
 
                 match root_type {
-                    RootType::BTC { ledger, .. } => {
-                        let ledger = cans.sns_ledger(ledger).await;
-                        let bal = get_balance(self.user_principal, &ledger).await?;
-
-                        if bal != 0u64 {
-                            Some(root_type)
+                    RootType::BTC { ledger, index } => {
+                        let metadata = self
+                            .canisters
+                            .get_ck_metadata(Some(self.user_principal), ledger, index)
+                            .await
+                            .ok()??;
+                        if metadata.balance
+                            != Some(TokenBalanceOrClaiming::new(TokenBalance::new_cdao(
+                                0u8.into(),
+                            )))
+                        {
+                            Some(TokenListResponse {
+                                root: root_type,
+                                airdrop_claimed: true,
+                                token_metadata: metadata,
+                            })
                         } else {
                             None
                         }
                     }
-                    RootType::USDC { ledger, .. } => {
-                        let ledger = cans.sns_ledger(ledger).await;
-                        let bal = get_balance(self.user_principal, &ledger).await?;
-
-                        if bal != 0u64 {
-                            Some(root_type)
+                    RootType::USDC { ledger, index } => {
+                        let metadata = self
+                            .canisters
+                            .get_ck_metadata(Some(self.user_principal), ledger, index)
+                            .await
+                            .ok()??;
+                        if metadata.balance
+                            != Some(TokenBalanceOrClaiming::new(TokenBalance::new_cdao(
+                                0u8.into(),
+                            )))
+                        {
+                            Some(TokenListResponse {
+                                root: root_type,
+                                airdrop_claimed: true,
+                                token_metadata: metadata,
+                            })
                         } else {
                             None
                         }
                     }
-                    _ => Some(root_type),
+                    _ => {
+                        let metadata = self
+                            .canisters
+                            .token_metadata_by_root_type(
+                                &self.nsfw_detector,
+                                Some(self.user_principal),
+                                root_type.clone(),
+                            )
+                            .await
+                            .unwrap()
+                            .unwrap();
+
+                        let airdrop_status = cans
+                            .get_airdrop_status(
+                                metadata.token_owner.clone().unwrap().canister_id,
+                                Principal::from_text(root_type.to_string()).unwrap(),
+                                cans.user_principal(),
+                            )
+                            .await
+                            .ok()?;
+
+                        Some(TokenListResponse {
+                            root: root_type,
+                            airdrop_claimed: airdrop_status,
+                            token_metadata: metadata,
+                        })
+                    }
                 }
             })
             .collect::<Vec<_>>()
