@@ -145,8 +145,9 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
             }
             Result15::Err(_) => vec![],
         };
-
-        let list_end = tokens_fetched < (end - start);
+        
+        println!("{tokens_fetched}, {}, {}", end - start, tokens.len());
+        let list_end = tokens_fetched == 0;
 
         if start == 0 {
             let mut rep = stream::iter(
@@ -209,9 +210,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                                 Some(self.user_principal),
                                 root_type.clone(),
                             )
-                            .await
-                            .unwrap()
-                            .unwrap();
+                            .await.ok()??;
 
                         let airdrop_status = cans
                             .get_airdrop_status(
@@ -236,9 +235,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                                 Some(self.user_principal),
                                 root_type.clone(),
                             )
-                            .await
-                            .unwrap()
-                            .unwrap();
+                            .await.ok()??;
 
                         Some(TokenListResponse {
                             root: root_type,
