@@ -342,7 +342,7 @@ impl<const A: bool> Canisters<A> {
             logo_b64,
             name: name.replace("ck", ""),
             description: String::new(),
-            symbol,
+            symbol: symbol.replace("ck", ""),
             balance: None,
             fees: TokenBalance::new(fees, decimals),
             root: None,
