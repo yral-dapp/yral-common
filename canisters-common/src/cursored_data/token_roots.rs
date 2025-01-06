@@ -30,14 +30,15 @@ impl KeyedData for RootType {
 
 #[derive(Clone)]
 pub struct TokenRootList<TkInfo: TokenInfoProvider> {
-    pub canisters: Canisters<true>,
+    pub viewer_principal: Principal,
+    pub canisters: Canisters<false>,
     pub user_canister: Principal,
     pub user_principal: Principal,
     pub nsfw_detector: TkInfo,
 }
 
 pub async fn eligible_non_yral_supported_tokens(
-    cans: &Canisters<true>,
+    cans: &Canisters<false>,
     nsfw_detector: &impl TokenInfoProvider,
     user_principal: Principal,
 ) -> Result<Vec<TokenListResponse>> {
@@ -123,7 +124,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                             .get_airdrop_status(
                                 metadata.token_owner.clone().unwrap().canister_id,
                                 Principal::from_text(root.to_string()).unwrap(),
-                                self.canisters.user_principal(),
+                                self.viewer_principal,
                             )
                             .await
                             .ok()?;
@@ -212,7 +213,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                             .get_airdrop_status(
                                 metadata.token_owner.clone().unwrap().canister_id,
                                 Principal::from_text(root_type.to_string()).unwrap(),
-                                cans.user_principal(),
+                                self.viewer_principal,
                             )
                             .await
                             .ok()?;
