@@ -340,7 +340,7 @@ impl<const A: bool> Canisters<A> {
         let decimals: u8 = decimals.0.try_into().unwrap();
         let mut res = TokenMetadata {
             logo_b64,
-            name,
+            name: name.replace("ck", ""),
             description: String::new(),
             symbol,
             balance: None,

@@ -159,10 +159,8 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                 .into_iter(),
             )
             .filter_map(|root_type| async move {
-                let cans = &self.canisters;
-
                 match root_type {
-                    RootType::BTC { ledger, index } => {
+                    RootType::BTC { ledger, index } | RootType::USDC { ledger, index } => {
                         let metadata = self
                             .canisters
                             .get_ck_metadata(Some(self.user_principal), ledger, index)
@@ -181,51 +179,6 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                         } else {
                             None
                         }
-                    }
-                    RootType::USDC { ledger, index } => {
-                        let metadata = self
-                            .canisters
-                            .get_ck_metadata(Some(self.user_principal), ledger, index)
-                            .await
-                            .ok()??;
-                        if metadata.balance
-                            != Some(TokenBalanceOrClaiming::new(TokenBalance::new_cdao(
-                                0u8.into(),
-                            )))
-                        {
-                            Some(TokenListResponse {
-                                root: root_type,
-                                airdrop_claimed: true,
-                                token_metadata: metadata,
-                            })
-                        } else {
-                            None
-                        }
-                    }
-                    RootType::Other(_) => {
-                        let metadata = self
-                            .canisters
-                            .token_metadata_by_root_type(
-                                &self.nsfw_detector,
-                                Some(self.user_principal),
-                                root_type.clone(),
-                            )
-                            .await.ok()??;
-
-                        let airdrop_status = cans
-                            .get_airdrop_status(
-                                metadata.token_owner.clone().unwrap().canister_id,
-                                Principal::from_text(root_type.to_string()).unwrap(),
-                                self.viewer_principal,
-                            )
-                            .await
-                            .ok()?;
-
-                        Some(TokenListResponse {
-                            root: root_type,
-                            airdrop_claimed: airdrop_status,
-                            token_metadata: metadata,
-                        })
                     }
                     RootType::COYNS => {
                         let metadata = self
@@ -242,7 +195,8 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                             airdrop_claimed: true,
                             token_metadata: metadata,
                         })
-                    }
+                    },
+                    _ => None
                 }
             })
             .collect::<Vec<_>>()
