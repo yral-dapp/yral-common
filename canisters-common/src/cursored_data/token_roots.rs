@@ -103,8 +103,11 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
         let tokens = user
             .get_token_roots_of_this_user_with_pagination_cursor(start as u64, end as u64)
             .await?;
+
+        let mut tokens_fetched = 0;
         let mut tokens: Vec<TokenListResponse> = match tokens {
             Result15::Ok(v) => {
+                tokens_fetched = v.len();
                 v.into_iter()
                     .map(|t| async move {
                         let root = RootType::from_str(&t.to_text()).unwrap();
@@ -143,7 +146,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
             Result15::Err(_) => vec![],
         };
 
-        let list_end = tokens.len() < (end - start);
+        let list_end = tokens_fetched < (end - start);
 
         if start == 0 {
             let mut rep = stream::iter(

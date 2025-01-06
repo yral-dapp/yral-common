@@ -62,6 +62,7 @@ impl FromStr for RootType {
                 ledger: Principal::from_text(CKUSDC_LEDGER)?,
                 index: Principal::from_text(CKUSDC_INDEX)?,
             }),
+            "coyns" => Ok(Self::COYNS),
             _ => Ok(Self::Other(Principal::from_text(s)?)),
         }
     }
