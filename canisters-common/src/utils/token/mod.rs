@@ -45,6 +45,7 @@ pub struct TokenMetadata {
 pub enum RootType {
     BTC { ledger: Principal, index: Principal },
     USDC { ledger: Principal, index: Principal },
+    COYNS,
     Other(Principal),
 }
 
@@ -71,6 +72,7 @@ impl Display for RootType {
         match self {
             Self::BTC { .. } => f.write_str("btc"),
             Self::USDC { .. } => f.write_str("usdc"),
+            Self::COYNS => f.write_str("coyns"),
             Self::Other(principal) => f.write_str(&principal.to_text()),
         }
     }
@@ -86,6 +88,40 @@ impl<const A: bool> Canisters<A> {
         match root_type {
             RootType::BTC { ledger, index } | RootType::USDC { ledger, index } => {
                 self.get_ck_metadata(user_principal, ledger, index).await
+            }
+            RootType::COYNS => {
+                let Some(user_principal) = user_principal else {
+                    return Ok(None);
+                };
+
+                let Some(user_canister) = self
+                    .get_individual_canister_by_user_principal(user_principal)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+
+                let indiv = self.individual_user(user_canister).await;
+
+                let bal = indiv.get_utility_token_balance().await?;
+
+                Ok(Some(TokenMetadata {
+                    logo_b64: "/img/coyns.png".to_string(),
+                    name: "COYNS".to_string(),
+                    description: "".to_string(),
+                    symbol: "COYNS".to_string(),
+                    balance: Some(TokenBalanceOrClaiming::new(TokenBalance::new(
+                        bal.into(),
+                        0,
+                    ))),
+                    fees: TokenBalance::new(0u32.into(), 0),
+                    root: None,
+                    ledger: Principal::anonymous(),
+                    index: Principal::anonymous(),
+                    decimals: 8,
+                    is_nsfw: false,
+                    token_owner: None,
+                }))
             }
             RootType::Other(root) => {
                 self.token_metadata_by_root(nsfw_detector, user_principal, root)

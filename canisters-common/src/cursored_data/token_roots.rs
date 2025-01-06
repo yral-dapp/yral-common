@@ -148,6 +148,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
         if start == 0 {
             let mut rep = stream::iter(
                 [
+                    RootType::COYNS,
                     RootType::from_str("btc").unwrap(),
                     RootType::from_str("usdc").unwrap(),
                 ]
@@ -197,7 +198,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                             None
                         }
                     }
-                    _ => {
+                    RootType::Other(_) => {
                         let metadata = self
                             .canisters
                             .token_metadata_by_root_type(
@@ -221,6 +222,24 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                         Some(TokenListResponse {
                             root: root_type,
                             airdrop_claimed: airdrop_status,
+                            token_metadata: metadata,
+                        })
+                    }
+                    RootType::COYNS => {
+                        let metadata = self
+                            .canisters
+                            .token_metadata_by_root_type(
+                                &self.nsfw_detector,
+                                Some(self.user_principal),
+                                root_type.clone(),
+                            )
+                            .await
+                            .unwrap()
+                            .unwrap();
+
+                        Some(TokenListResponse {
+                            root: root_type,
+                            airdrop_claimed: true,
                             token_metadata: metadata,
                         })
                     }
