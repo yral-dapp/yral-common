@@ -168,7 +168,7 @@ impl PartialOrd for TokenBalance {
     }
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
 pub struct TokenBalanceOrClaiming(Option<TokenBalance>);
 
 impl TokenBalanceOrClaiming {
