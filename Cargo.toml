@@ -1,5 +1,5 @@
 [workspace]
-members = [ "canisters-client", "canisters-common", "qstash-types","types", "sns-validation", "grpc-traits"]
+members = [ "canisters-client", "canisters-common", "qstash-types","types", "sns-validation", "grpc-traits", "pump-n-dump-common"]
 resolver = "2"
 
 [workspace.dependencies]
@@ -11,9 +11,11 @@ types = { package = "yral-types", path = "types" }
 canisters-client = { package = "yral-canisters-client", path = "canisters-client" }
 grpc-traits = { package = "yral-grpc-traits", path = "grpc-traits" }
 candid = "0.10.10"
-url = "2.5.3"
+url = "2.5.4"
 web-time = "1.0.0"
 thiserror = "2.0.3"
 log = "0.4.22"
 k256 = { version = "0.13.4", default-features = false, features = ["jwk"] }
+yral-identity = { git = "https://github.com/yral-dapp/yral-identity", rev = "156bc0e7a4bc3d9a3b4faab4b9b3048e88a0c701" }
 futures-util = "0.3.31"
+uuid = { version = "1.11.0", features = ["serde"] }
