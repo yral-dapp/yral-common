@@ -25,6 +25,7 @@ pub struct WsRequest {
 pub struct GameResult {
     pub direction: GameDirection,
     pub reward_pool: Nat,
+    pub bet_count: u64,
 }
 
 /// Types of responses from the worker
@@ -33,6 +34,7 @@ pub enum WsResp {
     Ok,
     Error(String),
     GameResultEvent(GameResult),
+    WinningPoolEvent(u64),
 }
 
 /// A complete response from the worker
