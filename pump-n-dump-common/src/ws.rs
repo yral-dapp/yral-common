@@ -28,13 +28,35 @@ pub struct GameResult {
     pub bet_count: u64,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum WsError {
+    Generic(String),
+    BetFailure {
+        message: String,
+        direction: GameDirection,
+    }
+}
+
 /// Types of responses from the worker
 #[derive(Serialize, Deserialize, Clone)]
 pub enum WsResp {
     Ok,
-    Error(String),
+    Error(WsError),
     GameResultEvent(GameResult),
     WinningPoolEvent(u64),
+}
+
+impl WsResp {
+    pub fn error(e: impl Into<String>) -> Self {
+        Self::Error(WsError::Generic(e.into()))
+    }
+
+    pub fn bet_failure(e: impl Into<String>, direction: GameDirection) -> Self {
+        Self::Error(WsError::BetFailure {
+            message: e.into(),
+            direction,
+        })
+    }
 }
 
 /// A complete response from the worker
