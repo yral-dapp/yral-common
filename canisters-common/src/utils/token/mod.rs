@@ -8,9 +8,10 @@ use ic_agent::export::PrincipalError;
 
 use crate::{
     consts::{
-        CKBTC_INDEX, CKBTC_LEDGER, CKUSDC_INDEX, CKUSDC_LEDGER, SUPPORTED_NON_YRAL_TOKENS_ROOT,
+        CKBTC_INDEX, CKBTC_LEDGER, CKUSDC_INDEX, CKUSDC_LEDGER, PUMP_AND_DUMP_WORKER_URL,
+        SUPPORTED_NON_YRAL_TOKENS_ROOT,
     },
-    error, Canisters, Result,
+    error, Canisters, PndError, Result,
 };
 use canisters_client::{
     sns_governance::{DissolveState, GetMetadataArg, ListNeurons},
@@ -46,6 +47,7 @@ pub enum RootType {
     BTC { ledger: Principal, index: Principal },
     USDC { ledger: Principal, index: Principal },
     COYNS,
+    GDOLR,
     Other(Principal),
 }
 
@@ -63,6 +65,7 @@ impl FromStr for RootType {
                 index: Principal::from_text(CKUSDC_INDEX)?,
             }),
             "coyns" => Ok(Self::COYNS),
+            "gdolr" => Ok(Self::COYNS),
             _ => Ok(Self::Other(Principal::from_text(s)?)),
         }
     }
@@ -74,9 +77,25 @@ impl Display for RootType {
             Self::BTC { .. } => f.write_str("btc"),
             Self::USDC { .. } => f.write_str("usdc"),
             Self::COYNS => f.write_str("coyns"),
+            Self::GDOLR => f.write_str("gdolr"),
             Self::Other(principal) => f.write_str(&principal.to_text()),
         }
     }
+}
+
+async fn load_gdolr_balance(user_canister: Principal) -> std::result::Result<Nat, PndError> {
+    let balance_url = PUMP_AND_DUMP_WORKER_URL
+        .join(&format!("/balance/{user_canister}"))
+        .expect("Url to be valid");
+
+    let res: Nat = reqwest::get(balance_url)
+        .await?
+        .text()
+        .await?
+        .parse()
+        .map_err(PndError::Parse)?;
+
+    Ok(res)
 }
 
 impl<const A: bool> Canisters<A> {
@@ -115,6 +134,35 @@ impl<const A: bool> Canisters<A> {
                         bal.into(),
                         0,
                     ))),
+                    fees: TokenBalance::new(0u32.into(), 0),
+                    root: None,
+                    ledger: Principal::anonymous(),
+                    index: Principal::anonymous(),
+                    decimals: 8,
+                    is_nsfw: false,
+                    token_owner: None,
+                }))
+            }
+            RootType::GDOLR => {
+                let Some(user_principal) = user_principal else {
+                    return Ok(None);
+                };
+
+                let Some(user_canister) = self
+                    .get_individual_canister_by_user_principal(user_principal)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+
+                let bal = load_gdolr_balance(user_canister).await?;
+
+                Ok(Some(TokenMetadata {
+                    logo_b64: "/img/gdolr.png".to_string(),
+                    name: "gDOLR".to_string(),
+                    description: "".to_string(),
+                    symbol: "gDOLR".to_string(),
+                    balance: Some(TokenBalanceOrClaiming::new(TokenBalance::new(bal, 8))),
                     fees: TokenBalance::new(0u32.into(), 0),
                     root: None,
                     ledger: Principal::anonymous(),
