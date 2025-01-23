@@ -160,9 +160,9 @@ impl<const A: bool> Canisters<A> {
 
                 Ok(Some(TokenMetadata {
                     logo_b64: "/img/gdolr.png".to_string(),
-                    name: "gDOLR".to_string(),
+                    name: "GDOLR".to_string(),
                     description: "".to_string(),
-                    symbol: "gDOLR".to_string(),
+                    symbol: "GDOLR".to_string(),
                     balance: Some(TokenBalanceOrClaiming::new(TokenBalance::new(bal, 8))),
                     fees: TokenBalance::new(0u32.into(), 0),
                     root: None,
