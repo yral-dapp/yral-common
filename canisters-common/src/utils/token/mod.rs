@@ -95,7 +95,8 @@ async fn load_gdolr_balance(user_canister: Principal) -> std::result::Result<Nat
         .parse()
         .map_err(PndError::Parse)?;
 
-    Ok(res)
+    // worker returns dolr, with dolr:gdolr being 1:100
+    Ok(res * 100)
 }
 
 impl<const A: bool> Canisters<A> {
