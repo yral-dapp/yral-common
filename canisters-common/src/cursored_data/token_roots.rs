@@ -35,6 +35,7 @@ pub struct TokenRootList<TkInfo: TokenInfoProvider> {
     pub user_canister: Principal,
     pub user_principal: Principal,
     pub nsfw_detector: TkInfo,
+    pub exclude: Vec<RootType>,
 }
 
 pub async fn eligible_non_yral_supported_tokens(
@@ -212,6 +213,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                 )
                 .await?,
             );
+            rep.retain(|item| !self.exclude.contains(&item.root));
             tokens.splice(0..0, rep);
         }
         Ok(PageEntry {
