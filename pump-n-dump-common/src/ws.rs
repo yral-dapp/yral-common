@@ -3,12 +3,15 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use yral_identity::msg_builder::Message;
 
-use crate::GameDirection;
+use crate::{rest::UserBetsResponse, GameDirection};
 
 /// Types of request that worker can handle
 #[derive(Serialize, Deserialize)]
 pub enum WsMessage {
-    Bet(GameDirection),
+    Bet {
+        direction: GameDirection,
+        round: u64,
+    },
 }
 
 /// A complete request that the worker expects
@@ -26,6 +29,7 @@ pub struct GameResult {
     pub direction: GameDirection,
     pub reward_pool: Nat,
     pub bet_count: u64,
+    pub new_round: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -34,16 +38,36 @@ pub enum WsError {
     BetFailure {
         message: String,
         direction: GameDirection,
-    }
+    },
 }
 
 /// Types of responses from the worker
 #[derive(Serialize, Deserialize, Clone)]
 pub enum WsResp {
-    Ok,
+    // Request was succesful
+    BetSuccesful {
+        // It is still possible for the request to roll over
+        // to the next round in extreme cases
+        round: u64,
+    },
+    // Request Failed
     Error(WsError),
+    // Event - Game ended
     GameResultEvent(GameResult),
-    WinningPoolEvent(u64),
+    // Event - Winning Pool Changed
+    WinningPoolEvent {
+        new_pool: u64,
+        round: u64,
+    },
+    // Event - The current in-game state
+    // sent when ws connection
+    // is estabilished
+    WelcomeEvent {
+        round: u64,
+        pool: u64,
+        player_count: u64,
+        user_bets: UserBetsResponse,
+    },
 }
 
 impl WsResp {
