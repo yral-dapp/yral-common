@@ -96,7 +96,7 @@ async fn load_gdolr_balance(user_canister: Principal) -> std::result::Result<Nat
         .map_err(PndError::Parse)?;
 
     // worker returns dolr, with dolr:gdolr being 1:100
-    Ok(res * 100usize)
+    Ok(res * 100usize / 10.pow(8))
 }
 
 impl<const A: bool> Canisters<A> {
@@ -163,7 +163,7 @@ impl<const A: bool> Canisters<A> {
                     name: "GDOLR".to_string(),
                     description: "".to_string(),
                     symbol: "GDOLR".to_string(),
-                    balance: Some(TokenBalanceOrClaiming::new(TokenBalance::new(bal, 8))),
+                    balance: Some(TokenBalanceOrClaiming::new(TokenBalance::new(bal, 0))),
                     fees: TokenBalance::new(0u32.into(), 0),
                     root: None,
                     ledger: Principal::anonymous(),
