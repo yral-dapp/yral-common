@@ -32,7 +32,7 @@ pub struct TokenMetadata {
     pub symbol: String,
     pub balance: Option<TokenBalanceOrClaiming>,
     /// applicable for gdolr only
-    pub withdrawable_balance: Option<Nat>,
+    pub withdrawable_balance: Option<TokenBalance>,
     pub fees: TokenBalance,
     pub root: Option<Principal>,
     pub ledger: Principal,
@@ -181,6 +181,8 @@ impl<const A: bool> Canisters<A> {
                 // TODO: ensure that worker returns error when the user doesn't have withdrawable balance
                 let withdrawable_balance =
                     load_gdolr_withdrawable_balance(user_canister).await.ok();
+                let withdrawable_balance =
+                    withdrawable_balance.map(|bal| TokenBalance::new(bal, 0));
 
                 Ok(Some(TokenMetadata {
                     logo_b64: "/img/gdolr.png".to_string(),
