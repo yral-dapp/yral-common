@@ -31,6 +31,8 @@ pub struct TokenMetadata {
     pub description: String,
     pub symbol: String,
     pub balance: Option<TokenBalanceOrClaiming>,
+    /// applicable for gdolr only
+    pub withdrawable_balance: Option<Nat>,
     pub fees: TokenBalance,
     pub root: Option<Principal>,
     pub ledger: Principal,
@@ -99,6 +101,24 @@ async fn load_gdolr_balance(user_canister: Principal) -> std::result::Result<Nat
     Ok(res * 100usize / 10usize.pow(8))
 }
 
+async fn load_gdolr_withdrawable_balance(
+    user_canister: Principal,
+) -> std::result::Result<Nat, PndError> {
+    let balance_url = PUMP_AND_DUMP_WORKER_URL
+        .join(&format!("/withdrawable_balance/{user_canister}"))
+        .expect("Url to be valid");
+
+    let res: Nat = reqwest::get(balance_url)
+        .await?
+        .text()
+        .await?
+        .parse()
+        .map_err(PndError::Parse)?;
+
+    // worker returns dolr, with dolr:gdolr being 1:100
+    Ok(res * 100usize / 10usize.pow(8))
+}
+
 impl<const A: bool> Canisters<A> {
     pub async fn token_metadata_by_root_type(
         &self,
@@ -135,6 +155,7 @@ impl<const A: bool> Canisters<A> {
                         bal.into(),
                         0,
                     ))),
+                    withdrawable_balance: None,
                     fees: TokenBalance::new(0u32.into(), 0),
                     root: None,
                     ledger: Principal::anonymous(),
@@ -157,6 +178,9 @@ impl<const A: bool> Canisters<A> {
                 };
 
                 let bal = load_gdolr_balance(user_canister).await?;
+                // TODO: ensure that worker returns error when the user doesn't have withdrawable balance
+                let withdrawable_balance =
+                    load_gdolr_withdrawable_balance(user_canister).await.ok();
 
                 Ok(Some(TokenMetadata {
                     logo_b64: "/img/gdolr.png".to_string(),
@@ -164,6 +188,7 @@ impl<const A: bool> Canisters<A> {
                     description: "".to_string(),
                     symbol: "GDOLR".to_string(),
                     balance: Some(TokenBalanceOrClaiming::new(TokenBalance::new(bal, 0))),
+                    withdrawable_balance,
                     fees: TokenBalance::new(0u32.into(), 0),
                     root: None,
                     ledger: Principal::anonymous(),
@@ -245,6 +270,7 @@ impl<const A: bool> Canisters<A> {
             symbol,
             fees: TokenBalance::new_cdao(fees),
             balance: None,
+            withdrawable_balance: None,
             root: Some(token_root),
             ledger,
             index,
@@ -393,6 +419,7 @@ impl<const A: bool> Canisters<A> {
             description: String::new(),
             symbol: symbol.replace("ck", ""),
             balance: None,
+            withdrawable_balance: None,
             fees: TokenBalance::new(fees, decimals),
             root: None,
             ledger,
