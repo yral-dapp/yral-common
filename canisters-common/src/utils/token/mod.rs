@@ -8,8 +8,8 @@ use ic_agent::export::PrincipalError;
 
 use crate::{
     consts::{
-        CKBTC_INDEX, CKBTC_LEDGER, CKUSDC_INDEX, CKUSDC_LEDGER, PUMP_AND_DUMP_WORKER_URL,
-        SUPPORTED_NON_YRAL_TOKENS_ROOT,
+        CKBTC_INDEX, CKBTC_LEDGER, CKUSDC_INDEX, CKUSDC_LEDGER, GDOLR_TOKEN_NAME,
+        PUMP_AND_DUMP_WORKER_URL, SUPPORTED_NON_YRAL_TOKENS_ROOT,
     },
     error, Canisters, PndError, Result,
 };
@@ -184,9 +184,9 @@ impl<const A: bool> Canisters<A> {
 
                 Ok(Some(TokenMetadata {
                     logo_b64: "/img/gdolr.png".to_string(),
-                    name: "GDOLR".to_string(),
+                    name: GDOLR_TOKEN_NAME.into(),
                     description: "".to_string(),
-                    symbol: "GDOLR".to_string(),
+                    symbol: GDOLR_TOKEN_NAME.into(),
                     balance: Some(TokenBalanceOrClaiming::new(TokenBalance::new(bal, 0))),
                     withdrawable_balance,
                     fees: TokenBalance::new(0u32.into(), 0),

@@ -23,3 +23,4 @@ pub const CKUSDC_LEDGER: &str = "xevnm-gaaaa-aaaar-qafnq-cai";
 pub const CKUSDC_INDEX: &str = "xrs4b-hiaaa-aaaar-qafoa-cai";
 
 pub const SUPPORTED_NON_YRAL_TOKENS_ROOT: &[&str] = &["67bll-riaaa-aaaaq-aaauq-cai"];
+pub const GDOLR_TOKEN_NAME: &str = "GDOLR";
