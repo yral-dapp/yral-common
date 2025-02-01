@@ -7,4 +7,4 @@ pub static METADATA_API_BASE: LazyLock<Url> =
 pub const AGENT_URL: &str = "https://ic0.app";
 
 pub static PUMP_AND_DUMP_WORKER_URL: LazyLock<Url> =
-    LazyLock::new(|| Url::parse("https://yral-pump-n-dump.rupansh.workers.dev/").unwrap());
+    LazyLock::new(|| Url::parse("https://yral-pump-n-dump.go-bazzinga.workers.dev/").unwrap());
