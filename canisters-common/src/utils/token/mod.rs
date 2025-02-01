@@ -8,10 +8,10 @@ use ic_agent::export::PrincipalError;
 
 use crate::{
     consts::{
-        CKBTC_INDEX, CKBTC_LEDGER, CKUSDC_INDEX, CKUSDC_LEDGER, GDOLR_TOKEN_NAME,
-        PUMP_AND_DUMP_WORKER_URL, SUPPORTED_NON_YRAL_TOKENS_ROOT,
+        CKBTC_INDEX, CKBTC_LEDGER, CKUSDC_INDEX, CKUSDC_LEDGER, PUMP_AND_DUMP_WORKER_URL,
+        SUPPORTED_NON_YRAL_TOKENS_ROOT,
     },
-    error, Canisters, PndError, Result,
+    error, Canisters, PndError, Result, GDOLR_TOKEN_NAME,
 };
 use canisters_client::{
     sns_governance::{DissolveState, GetMetadataArg, ListNeurons},
