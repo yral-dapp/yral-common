@@ -41,3 +41,10 @@ pub struct UserBetsResponse {
     pub pumps: u64,
     pub dumps: u64,
 }
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct BalanceInfoResponse {
+    pub net_airdrop_reward: Nat,
+    pub balance: Nat,
+    pub withdrawable: Nat,
+}
