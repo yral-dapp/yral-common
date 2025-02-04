@@ -156,14 +156,12 @@ impl<const A: bool> Canisters<A> {
                     return Ok(None);
                 };
 
-                // Ok()
                 let bal_info = load_gdolr_balance(user_canister).await?;
-                // worker returns dolr, with dolr:gdolr being 1:100
-                let bal = bal_info.balance.clone() * 100usize;
+                let bal = bal_info.balance.clone();
 
                 let withdrawal_state = if bal_info.withdrawable == 0usize {
                     WithdrawalState::NeedMoreEarnings(
-                        (bal_info.net_airdrop_reward - bal_info.balance) + 1usize,
+                        (bal_info.net_airdrop_reward - bal_info.balance) + 1e6 as usize,
                     )
                 } else {
                     WithdrawalState::Value(bal_info.withdrawable)
@@ -174,7 +172,7 @@ impl<const A: bool> Canisters<A> {
                     name: GDOLR_TOKEN_NAME.into(),
                     description: "".to_string(),
                     symbol: GDOLR_TOKEN_NAME.into(),
-                    balance: Some(TokenBalanceOrClaiming::new(TokenBalance::new(bal, 8))),
+                    balance: Some(TokenBalanceOrClaiming::new(TokenBalance::new(bal, 6))),
                     withdrawable_state: Some(withdrawal_state),
                     fees: TokenBalance::new(0u32.into(), 0),
                     root: None,
