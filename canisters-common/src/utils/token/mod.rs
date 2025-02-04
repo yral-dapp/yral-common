@@ -163,7 +163,7 @@ impl<const A: bool> Canisters<A> {
 
                 let withdrawal_state = if bal_info.withdrawable == 0usize {
                     WithdrawalState::NeedMoreEarnings(
-                        bal_info.net_airdrop_reward - bal_info.balance,
+                        (bal_info.net_airdrop_reward - bal_info.balance) + 1,
                     )
                 } else {
                     WithdrawalState::Value(bal_info.withdrawable)
