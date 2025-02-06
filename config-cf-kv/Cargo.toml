@@ -12,8 +12,6 @@ yral-config-keys = { path = "../config-keys" }
 serde.workspace = true
 serde_json.workspace = true
 url.workspace = true
-derive_more = { version = "2.0.1", features = ["display"] }
-tokio = { version = "1.43.0", features = ["full"] }
 
 [features]
 default = ["rustls-tls"]
