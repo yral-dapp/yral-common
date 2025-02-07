@@ -11,7 +11,7 @@ pub trait ConfigKey: Display {
 #[macro_export]
 macro_rules! key_derive {
     ($key:ident => $value:ty) => {
-        impl crate::ConfigKey for $key {
+        impl $crate::ConfigKey for $key {
             type Value = $value;
 
             fn fallback() -> Option<Self::Value> {
@@ -21,7 +21,7 @@ macro_rules! key_derive {
     };
 
     ($key:ident => $value:ty|$fallback:expr) => {
-        impl crate::ConfigKey for $key {
+        impl $crate::ConfigKey for $key {
             type Value = $value;
 
             fn fallback() -> Option<Self::Value> {

@@ -8,6 +8,7 @@ members = [
     "grpc-traits",
     "config-keys",
     "config-cf-kv",
+    "config-cf-kv-worker",
 ]
 resolver = "2"
 

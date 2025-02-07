@@ -11,7 +11,7 @@ pub enum KVFetchError {
     KeyNotFound,
     StatusNotOk(u16),
     Decode(reqwest::Error),
-    Parse(serde_json::Error),
+    Serde(serde_json::Error),
     InvalidUrlOrKeyName,
 }
 
@@ -50,7 +50,7 @@ impl KVConfig {
                     };
 
                     let value = match serde_json::from_reader(value.as_bytes()) {
-                        Err(err) => return Err(KVFetchError::Parse(err)),
+                        Err(err) => return Err(KVFetchError::Serde(err)),
                         Ok(value) => value,
                     };
 
@@ -71,7 +71,7 @@ impl KVConfig {
         let url = self.url(key)?;
 
         let value = match serde_json::to_string(&value) {
-            Err(err) => return Err(KVFetchError::Parse(err)),
+            Err(err) => return Err(KVFetchError::Serde(err)),
             Ok(value) => value,
         };
 
