@@ -1,0 +1,10 @@
+[package]
+name = "yral-config-cf-kv-worker"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+yral-config-keys = { path = "../config-keys" }
+serde.workspace = true
+serde_json.workspace = true
+worker = { version = "0.4.2" }
