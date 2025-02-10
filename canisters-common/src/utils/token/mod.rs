@@ -68,7 +68,7 @@ impl FromStr for RootType {
                 index: Principal::from_text(CKUSDC_INDEX)?,
             }),
             "coyns" => Ok(Self::COYNS),
-            "gdolr" => Ok(Self::COYNS),
+            "gdolr" => Ok(Self::GDOLR),
             _ => Ok(Self::Other(Principal::from_text(s)?)),
         }
     }
