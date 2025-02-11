@@ -65,7 +65,7 @@ pub async fn eligible_non_yral_supported_tokens(
                 {
                     return future::ready(Some(TokenListResponse {
                         root: RootType::Other(token_root),
-                        airdrop_claimed: true,
+                        // airdrop_claimed: true,
                         token_metadata: metadata,
                     }));
                 }
@@ -82,7 +82,7 @@ pub async fn eligible_non_yral_supported_tokens(
 #[derive(Clone)]
 pub struct TokenListResponse {
     pub root: RootType,
-    pub airdrop_claimed: bool,
+    // pub airdrop_claimed: bool,
     pub token_metadata: TokenMetadata,
 }
 
@@ -122,19 +122,19 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                             .await
                             .ok()??;
 
-                        let airdrop_claimed = self
-                            .canisters
-                            .get_airdrop_status(
-                                metadata.token_owner.clone().unwrap().canister_id,
-                                Principal::from_text(root.to_string()).unwrap(),
-                                self.viewer_principal,
-                            )
-                            .await
-                            .ok()?;
+                        // let airdrop_claimed = self
+                        //     .canisters
+                        //     .get_airdrop_status(
+                        //         metadata.token_owner.clone().unwrap().canister_id,
+                        //         Principal::from_text(root.to_string()).unwrap(),
+                        //         self.viewer_principal,
+                        //     )
+                        //     .await
+                        //     .ok()?;
 
                         Some(TokenListResponse {
                             root,
-                            airdrop_claimed,
+                            // airdrop_claimed,
                             token_metadata: metadata,
                         })
                     })
@@ -173,7 +173,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                         {
                             Some(TokenListResponse {
                                 root: root_type,
-                                airdrop_claimed: true,
+                                // airdrop_claimed: true,
                                 token_metadata: metadata,
                             })
                         } else {
@@ -192,7 +192,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
 
                         Some(TokenListResponse {
                             root: root_type,
-                            airdrop_claimed: true,
+                            // airdrop_claimed: true,
                             token_metadata: metadata,
                         })
                     },
