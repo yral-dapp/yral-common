@@ -12,7 +12,7 @@ use crate::{
         CKBTC_INDEX, CKBTC_LEDGER, CKUSDC_INDEX, CKUSDC_LEDGER, PUMP_AND_DUMP_WORKER_URL,
         SUPPORTED_NON_YRAL_TOKENS_ROOT,
     },
-    error, Canisters, PndError, Result, GDOLR_TOKEN_NAME,
+    error, Canisters, PndError, Result, CENT_TOKEN_NAME,
 };
 use canisters_client::{
     sns_governance::{DissolveState, GetMetadataArg, ListNeurons},
@@ -50,7 +50,7 @@ pub enum RootType {
     BTC { ledger: Principal, index: Principal },
     USDC { ledger: Principal, index: Principal },
     COYNS,
-    GDOLR,
+    CENTS,
     Other(Principal),
 }
 
@@ -68,7 +68,7 @@ impl FromStr for RootType {
                 index: Principal::from_text(CKUSDC_INDEX)?,
             }),
             "coyns" => Ok(Self::COYNS),
-            "gdolr" => Ok(Self::GDOLR),
+            "cents" => Ok(Self::CENTS),
             _ => Ok(Self::Other(Principal::from_text(s)?)),
         }
     }
@@ -80,13 +80,13 @@ impl Display for RootType {
             Self::BTC { .. } => f.write_str("btc"),
             Self::USDC { .. } => f.write_str("usdc"),
             Self::COYNS => f.write_str("coyns"),
-            Self::GDOLR => f.write_str("gdolr"),
+            Self::CENTS => f.write_str("cents"),
             Self::Other(principal) => f.write_str(&principal.to_text()),
         }
     }
 }
 
-async fn load_gdolr_balance(
+async fn load_cents_balance(
     user_canister: Principal,
 ) -> std::result::Result<BalanceInfoResponse, PndError> {
     let balance_url = PUMP_AND_DUMP_WORKER_URL
@@ -144,7 +144,7 @@ impl<const A: bool> Canisters<A> {
                     token_owner: None,
                 }))
             }
-            RootType::GDOLR => {
+            RootType::CENTS => {
                 let Some(user_principal) = user_principal else {
                     return Ok(None);
                 };
@@ -156,7 +156,7 @@ impl<const A: bool> Canisters<A> {
                     return Ok(None);
                 };
 
-                let bal_info = load_gdolr_balance(user_canister).await?;
+                let bal_info = load_cents_balance(user_canister).await?;
                 let bal = bal_info.balance.clone();
 
                 let withdrawal_state = if bal_info.withdrawable == 0usize {
@@ -168,10 +168,10 @@ impl<const A: bool> Canisters<A> {
                 };
 
                 Ok(Some(TokenMetadata {
-                    logo_b64: "/img/gdolr.png".to_string(),
-                    name: GDOLR_TOKEN_NAME.into(),
+                    logo_b64: "/img/cents.png".to_string(),
+                    name: CENT_TOKEN_NAME.into(),
                     description: "".to_string(),
-                    symbol: GDOLR_TOKEN_NAME.into(),
+                    symbol: CENT_TOKEN_NAME.into(),
                     balance: Some(TokenBalanceOrClaiming::new(TokenBalance::new(bal, 6))),
                     withdrawable_state: Some(withdrawal_state),
                     fees: TokenBalance::new(0u32.into(), 0),

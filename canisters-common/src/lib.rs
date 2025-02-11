@@ -32,7 +32,7 @@ pub mod utils;
 
 pub use error::*;
 use yral_metadata_types::UserMetadata;
-pub const GDOLR_TOKEN_NAME: &str = "GDOLR";
+pub const CENT_TOKEN_NAME: &str = "CENTS";
 
 #[derive(Clone)]
 pub struct Canisters<const AUTH: bool> {

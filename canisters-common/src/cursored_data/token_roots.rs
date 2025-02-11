@@ -154,7 +154,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
             let mut rep = stream::iter(
                 [
                     RootType::COYNS,
-                    RootType::GDOLR,
+                    RootType::CENTS,
                     RootType::from_str("btc").unwrap(),
                     RootType::from_str("usdc").unwrap(),
                 ]
@@ -182,7 +182,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                             None
                         }
                     }
-                    RootType::COYNS | RootType::GDOLR => {
+                    RootType::COYNS | RootType::CENTS => {
                         let metadata = self
                             .canisters
                             .token_metadata_by_root_type(
