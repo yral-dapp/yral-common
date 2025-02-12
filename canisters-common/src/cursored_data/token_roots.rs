@@ -128,6 +128,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                                 metadata.token_owner.clone().unwrap().canister_id,
                                 Principal::from_text(root.to_string()).unwrap(),
                                 self.viewer_principal,
+                                metadata.timestamp,
                             )
                             .await
                             .ok()?;
