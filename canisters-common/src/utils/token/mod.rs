@@ -150,6 +150,9 @@ impl<const A: bool> Canisters<A> {
         let Some(index) = sns_cans.index else {
             return Ok(None);
         };
+        let Some(swap) = sns_cans.swap else {
+            return Ok(None);
+        };
 
         let metadata = self
             .get_token_metadata(
@@ -158,6 +161,7 @@ impl<const A: bool> Canisters<A> {
                 token_root,
                 governance,
                 ledger,
+                swap,
                 index,
             )
             .await?;
@@ -172,6 +176,7 @@ impl<const A: bool> Canisters<A> {
         token_root: Principal,
         governance: Principal,
         ledger: Principal,
+        swap: Principal,
         index: Principal,
     ) -> Result<TokenMetadata> {
         let governance_can = self.sns_governance(governance).await;
@@ -180,14 +185,21 @@ impl<const A: bool> Canisters<A> {
         let ledger_can = self.sns_ledger(ledger).await;
         let symbol = ledger_can.icrc_1_symbol().await?;
 
+        let swap_can = self.sns_swap(swap).await;
+
+        let timestamp = swap_can
+            .get_init(GetInitArg {})
+            .await?
+            .init
+            .map(|init| init.swap_start_timestamp_seconds.unwrap_or(0))
+            .unwrap_or(0) as i64;
+
         let fees = ledger_can.icrc_1_fee().await?;
         let decimals = ledger_can.icrc_1_decimals().await?;
 
         let token = nsfw_detector.get_token_by_id(token_root.to_string()).await;
 
-        let (timestamp, is_nsfw) = token
-            .map(|token| (Some(token.timestamp), token.is_nsfw))
-            .unwrap_or((None, false));
+        let is_nsfw = token.map(|token| token.is_nsfw).unwrap_or(false);
 
         let token_owner = self.get_token_owner(token_root).await?;
 
@@ -204,7 +216,7 @@ impl<const A: bool> Canisters<A> {
             decimals,
             is_nsfw,
             token_owner,
-            timestamp,
+            timestamp: Some(timestamp),
         };
 
         if let Some(user_principal) = user_principal {

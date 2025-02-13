@@ -17,7 +17,7 @@ pub struct TokenListItemFS {
     pub is_nsfw: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TokenListItemFSWithTimestamp {
     pub user_id: String,
     pub name: String,
