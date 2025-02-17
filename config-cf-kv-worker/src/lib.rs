@@ -42,10 +42,10 @@ impl KVConfig {
         };
 
         match self.store.put(&key.to_string(), &value) {
-            Err(err) => return Err(KVFetchError::KvError(err)),
+            Err(err) => Err(KVFetchError::KvError(err)),
             Ok(builder) => match builder.execute().await {
                 Ok(()) => Ok(()),
-                Err(err) => return Err(KVFetchError::KvError(err)),
+                Err(err) => Err(KVFetchError::KvError(err)),
             },
         }
     }
