@@ -101,4 +101,4 @@ impl UncommittedGameInfo {
     }
 }
 
-pub type UnicommitedGamesRes = Vec<UncommittedGameInfo>;
+pub type UncommittedGamesRes = Vec<UncommittedGameInfo>;
