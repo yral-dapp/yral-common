@@ -1,5 +1,16 @@
 [workspace]
-members = [ "canisters-client", "canisters-common", "qstash-types","types", "sns-validation", "grpc-traits", "pump-n-dump-common"]
+members = [
+    "canisters-client",
+    "canisters-common",
+    "qstash-types",
+    "types",
+    "sns-validation",
+    "grpc-traits",
+    "config-keys",
+    "config-cf-kv",
+    "config-cf-kv-worker",
+    "pump-n-dump-common",
+]
 resolver = "2"
 
 [workspace.dependencies]
