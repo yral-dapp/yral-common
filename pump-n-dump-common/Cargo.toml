@@ -1,0 +1,17 @@
+[package]
+name = "yral-pump-n-dump-common"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+candid.workspace = true
+yral-identity = { workspace = true, default-features = false }
+ic-agent = { workspace = true, optional = true }
+uuid.workspace = true
+url = { workspace = true, optional = true }
+canisters-client = { workspace = true, features = ["individual-user"]}
+
+[features]
+client = ["yral-identity/ic-agent", "dep:ic-agent", "dep:url"]

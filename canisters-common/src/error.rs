@@ -1,6 +1,15 @@
-use std::io;
+use std::{io, str::FromStr};
 
+use candid::Nat;
 use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum PndError {
+    #[error("worker didn't return a number: {0}")]
+    Parse(<Nat as FromStr>::Err),
+    #[error("network error when accessing worker: {0}")]
+    Network(#[from] reqwest::Error),
+}
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -22,6 +31,8 @@ pub enum Error {
     TipCertificate,
     #[error("{0}")]
     CborDe(#[from] ciborium::de::Error<io::Error>),
+    #[error("{0}")]
+    PndError(#[from] PndError),
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
