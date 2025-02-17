@@ -91,4 +91,14 @@ pub enum UncommittedGameInfo {
     Pending { token_root: Principal },
 }
 
+impl UncommittedGameInfo {
+    /// Get the game's token root regardless of state
+    pub fn token_root(&self) -> Principal {
+        match self {
+            UncommittedGameInfo::Completed(info) => info.token_root,
+            UncommittedGameInfo::Pending { token_root } => *token_root,
+        }
+    }
+}
+
 pub type UnicommitedGamesRes = Vec<UncommittedGameInfo>;
