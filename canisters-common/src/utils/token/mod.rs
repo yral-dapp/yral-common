@@ -197,9 +197,9 @@ impl<const A: bool> Canisters<A> {
         let fees = ledger_can.icrc_1_fee().await?;
         let decimals = ledger_can.icrc_1_decimals().await?;
 
-        let token = nsfw_detector.get_token_by_id(token_root.to_string()).await;
+        // let token = nsfw_detector.get_token_by_id(token_root.to_string()).await;
 
-        let is_nsfw = token.map(|token| token.is_nsfw).unwrap_or(false);
+        let is_nsfw = false; // token.map(|token| token.is_nsfw).unwrap_or(false);
 
         let token_owner = self.get_token_owner(token_root).await?;
 
@@ -462,21 +462,63 @@ impl<const A: bool> Canisters<A> {
         user_principal: Principal,
         created_at: Option<i64>,
     ) -> Result<bool> {
+        let Some(created_at) = created_at else {
+            return Ok(false);
+        };
+
+        let cycle_duration = 40;
+        let claim_limit = 3;
+
         let token_owner = self.individual_user(token_owner).await;
-        let is_airdrop_claimed = token_owner
-            .deployed_cdao_canisters()
-            .await?
-            .into_iter()
-            .any(|token| {
-                token.root == token_root
-                    && token
-                        .airdrop_info
-                        .principals_who_successfully_claimed
-                        .iter()
-                        .any(|(principal, status)| {
-                            principal == &user_principal && *status == ClaimStatus::Claimed
-                        })
-            });
+
+        let canisters = token_owner.deployed_cdao_canisters().await?;
+
+        let now = web_time::SystemTime::now()
+            .duration_since(web_time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        let cycle_num = (now - (created_at as u64)) / cycle_duration;
+
+        let cycle_start = (created_at as u64) + (cycle_num * cycle_duration);
+
+        let is_airdrop_claimed = canisters.into_iter().any(|token| {
+            if token.root == token_root {
+                let principals = token.airdrop_info.principals_who_successfully_claimed;
+
+                let num_claims = principals.len();
+
+                if num_claims >= claim_limit {
+                    return true;
+                }
+
+                return principals.iter().any(|(principal, status)| {
+                    if principal == &user_principal {
+                        return match status {
+                            ClaimStatus::Claimed(claim_time) => match claim_time {
+                                Some(claim_time) => {
+                                    println!("DEBUG ----> claim time is {}", claim_time);
+
+                                    println!("DEBUG ----> cycle time is {}", cycle_start);
+
+                                    println!("DEBUG ----> cycle num is {}", cycle_num);
+
+                                    (*claim_time / 1000) > cycle_start
+                                }
+                                None => false,
+                            },
+                            ClaimStatus::Claiming => true,
+                            _ => false,
+                        };
+                    }
+
+                    return false;
+                });
+            }
+
+            return false;
+        });
+
         Ok(is_airdrop_claimed)
     }
 

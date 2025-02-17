@@ -12,8 +12,7 @@ use grpc_traits::TokenInfoProvider;
 use crate::{
     consts::SUPPORTED_NON_YRAL_TOKENS_ROOT,
     utils::token::{
-        balance::{TokenBalance, TokenBalanceOrClaiming},
-        RootType, TokenMetadata,
+        self, balance::{TokenBalance, TokenBalanceOrClaiming}, RootType, TokenMetadata
     },
     Canisters, Error, Result,
 };
@@ -104,6 +103,8 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
             .get_token_roots_of_this_user_with_pagination_cursor(start as u64, end as u64)
             .await?;
 
+        println!("DEBUG ----> tokens for this user are {:?}", tokens);
+
         let mut tokens_fetched = 0;
         let mut tokens: Vec<TokenListResponse> = match tokens {
             Result15::Ok(v) => {
@@ -111,6 +112,8 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                 v.into_iter()
                     .map(|t| async move {
                         let root = RootType::from_str(&t.to_text()).unwrap();
+
+                        println!("DEBUG ----> root is {:?}", root);
 
                         let metadata = self
                             .canisters
@@ -122,6 +125,8 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                             .await
                             .ok()??;
 
+                        println!("DEBUG ----> metadata is {:?}", metadata);
+
                         let airdrop_claimed = self
                             .canisters
                             .get_airdrop_status(
@@ -132,6 +137,8 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                             )
                             .await
                             .ok()?;
+
+                        println!("DEBUG ----> airdrop status is {}", airdrop_claimed);
 
                         Some(TokenListResponse {
                             root,
@@ -146,7 +153,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
             }
             Result15::Err(_) => vec![],
         };
-        
+
         println!("{tokens_fetched}, {}, {}", end - start, tokens.len());
         let list_end = tokens_fetched < end - start;
 
@@ -189,15 +196,16 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                                 Some(self.user_principal),
                                 root_type.clone(),
                             )
-                            .await.ok()??;
+                            .await
+                            .ok()??;
 
                         Some(TokenListResponse {
                             root: root_type,
                             airdrop_claimed: true,
                             token_metadata: metadata,
                         })
-                    },
-                    _ => None
+                    }
+                    _ => None,
                 }
             })
             .collect::<Vec<_>>()
