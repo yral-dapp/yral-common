@@ -1,6 +1,9 @@
 use candid::{Nat, Principal};
+use canisters_client::individual_user_template::ParticipatedGameInfo;
 use serde::{Deserialize, Serialize};
 use yral_identity::{msg_builder::Message, Signature};
+
+use crate::GameDirection;
 
 /// Request for converting GDOLLR to DOLLR
 #[derive(Serialize, Deserialize, Clone)]
@@ -48,3 +51,44 @@ pub struct BalanceInfoResponse {
     pub balance: Nat,
     pub withdrawable: Nat,
 }
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct CompletedGameInfo {
+    pub pumps: u64,
+    pub dumps: u64,
+    pub reward: Nat,
+    pub token_root: Principal,
+    pub outcome: GameDirection,
+}
+
+impl From<CompletedGameInfo> for ParticipatedGameInfo {
+    fn from(value: CompletedGameInfo) -> Self {
+        Self {
+            pumps: value.pumps,
+            dumps: value.dumps,
+            reward: value.reward,
+            token_root: value.token_root,
+            game_direction: value.outcome.into(),
+        }
+    }
+}
+
+impl From<ParticipatedGameInfo> for CompletedGameInfo {
+    fn from(value: ParticipatedGameInfo) -> Self {
+        Self {
+            pumps: value.pumps,
+            dumps: value.dumps,
+            reward: value.reward,
+            token_root: value.token_root,
+            outcome: value.game_direction.into(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub enum UncommittedGameInfo {
+    Completed(CompletedGameInfo),
+    Pending { token_root: Principal },
+}
+
+pub type UnicommitedGamesRes = Vec<UncommittedGameInfo>;
