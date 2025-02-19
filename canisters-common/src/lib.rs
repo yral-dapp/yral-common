@@ -3,7 +3,7 @@ use std::sync::Arc;
 use agent_wrapper::AgentWrapper;
 use candid::{Decode, Principal};
 use canisters_client::{
-    individual_user_template::{IndividualUserTemplate, Result25, Result7, UserCanisterDetails},
+    individual_user_template::{IndividualUserTemplate, Result24, Result8, UserCanisterDetails},
     platform_orchestrator::PlatformOrchestrator,
     post_cache::PostCache,
     sns_governance::SnsGovernance,
@@ -32,6 +32,7 @@ pub mod utils;
 
 pub use error::*;
 use yral_metadata_types::UserMetadata;
+pub const CENT_TOKEN_NAME: &str = "CENTS";
 
 #[derive(Clone)]
 pub struct Canisters<const AUTH: bool> {
@@ -77,7 +78,7 @@ impl Canisters<true> {
         self.individual_user(self.user_canister).await
     }
 
-    pub async fn deploy_cdao_sns(&self, init_payload: SnsInitPayload) -> Result<Result7> {
+    pub async fn deploy_cdao_sns(&self, init_payload: SnsInitPayload) -> Result<Result8> {
         let agent = self.agent.get_agent().await;
         let args = candid::encode_args((init_payload, CDAO_SWAP_TIME_SECS)).unwrap();
         let bytes = agent
@@ -85,7 +86,7 @@ impl Canisters<true> {
             .with_arg(args)
             .call_and_wait()
             .await?;
-        Ok(Decode!(&bytes, Result7)?)
+        Ok(Decode!(&bytes, Result8)?)
     }
 
     pub fn profile_details(&self) -> ProfileDetails {
@@ -193,8 +194,8 @@ impl Canisters<true> {
             .await
             .map_err(|e| e.to_string())
         {
-            Ok(Result25::Ok(_)) => (),
-            Err(e) | Ok(Result25::Err(e)) => log::warn!("Failed to update last access time: {}", e),
+            Ok(Result24::Ok(_)) => (),
+            Err(e) | Ok(Result24::Err(e)) => log::warn!("Failed to update last access time: {}", e),
         }
 
         res.profile_details = Some(user.get_profile_details().await?.into());
