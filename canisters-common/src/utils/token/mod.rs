@@ -1,4 +1,5 @@
 use canisters_client::sns_swap::GetInitArg;
+use pump_n_dump_common::{rest::BalanceInfoResponse, WithdrawalState};
 use std::{fmt::Display, str::FromStr};
 
 use balance::{TokenBalance, TokenBalanceOrClaiming};
@@ -8,9 +9,10 @@ use ic_agent::export::PrincipalError;
 
 use crate::{
     consts::{
-        CKBTC_INDEX, CKBTC_LEDGER, CKUSDC_INDEX, CKUSDC_LEDGER, SUPPORTED_NON_YRAL_TOKENS_ROOT,
+        CKBTC_INDEX, CKBTC_LEDGER, CKUSDC_INDEX, CKUSDC_LEDGER, PUMP_AND_DUMP_WORKER_URL,
+        SUPPORTED_NON_YRAL_TOKENS_ROOT,
     },
-    error, Canisters, Result,
+    error, Canisters, PndError, Result, CENT_TOKEN_NAME,
 };
 use canisters_client::{
     sns_governance::{DissolveState, GetMetadataArg, ListNeurons},
@@ -30,6 +32,8 @@ pub struct TokenMetadata {
     pub description: String,
     pub symbol: String,
     pub balance: Option<TokenBalanceOrClaiming>,
+    /// applicable for cents only
+    pub withdrawable_state: Option<WithdrawalState>,
     pub fees: TokenBalance,
     pub root: Option<Principal>,
     pub ledger: Principal,
@@ -47,6 +51,7 @@ pub enum RootType {
     BTC { ledger: Principal, index: Principal },
     USDC { ledger: Principal, index: Principal },
     COYNS,
+    CENTS,
     Other(Principal),
 }
 
@@ -64,6 +69,7 @@ impl FromStr for RootType {
                 index: Principal::from_text(CKUSDC_INDEX)?,
             }),
             "coyns" => Ok(Self::COYNS),
+            "cents" => Ok(Self::CENTS),
             _ => Ok(Self::Other(Principal::from_text(s)?)),
         }
     }
@@ -75,9 +81,22 @@ impl Display for RootType {
             Self::BTC { .. } => f.write_str("btc"),
             Self::USDC { .. } => f.write_str("usdc"),
             Self::COYNS => f.write_str("coyns"),
+            Self::CENTS => f.write_str("cents"),
             Self::Other(principal) => f.write_str(&principal.to_text()),
         }
     }
+}
+
+async fn load_cents_balance(
+    user_canister: Principal,
+) -> std::result::Result<BalanceInfoResponse, PndError> {
+    let balance_url = PUMP_AND_DUMP_WORKER_URL
+        .join(&format!("/balance/{user_canister}"))
+        .expect("Url to be valid");
+
+    let res: BalanceInfoResponse = reqwest::get(balance_url).await?.json().await?;
+
+    Ok(res)
 }
 
 impl<const A: bool> Canisters<A> {
@@ -116,6 +135,46 @@ impl<const A: bool> Canisters<A> {
                         bal.into(),
                         0,
                     ))),
+                    withdrawable_state: None,
+                    fees: TokenBalance::new(0u32.into(), 0),
+                    root: None,
+                    ledger: Principal::anonymous(),
+                    index: Principal::anonymous(),
+                    decimals: 8,
+                    is_nsfw: false,
+                    token_owner: None,
+                }))
+            }
+            RootType::CENTS => {
+                let Some(user_principal) = user_principal else {
+                    return Ok(None);
+                };
+
+                let Some(user_canister) = self
+                    .get_individual_canister_by_user_principal(user_principal)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+
+                let bal_info = load_cents_balance(user_canister).await?;
+                let bal = bal_info.balance.clone();
+
+                let withdrawal_state = if bal_info.withdrawable == 0usize {
+                    WithdrawalState::NeedMoreEarnings(
+                        (bal_info.net_airdrop_reward - bal_info.balance) + 1e6 as usize,
+                    )
+                } else {
+                    WithdrawalState::Value(bal_info.withdrawable)
+                };
+
+                Ok(Some(TokenMetadata {
+                    logo_b64: "/img/cents.png".to_string(),
+                    name: CENT_TOKEN_NAME.into(),
+                    description: "".to_string(),
+                    symbol: CENT_TOKEN_NAME.into(),
+                    balance: Some(TokenBalanceOrClaiming::new(TokenBalance::new(bal, 6))),
+                    withdrawable_state: Some(withdrawal_state),
                     fees: TokenBalance::new(0u32.into(), 0),
                     root: None,
                     ledger: Principal::anonymous(),
@@ -210,6 +269,7 @@ impl<const A: bool> Canisters<A> {
             symbol,
             fees: TokenBalance::new_cdao(fees),
             balance: None,
+            withdrawable_state: None,
             root: Some(token_root),
             ledger,
             index,
@@ -359,6 +419,7 @@ impl<const A: bool> Canisters<A> {
             description: String::new(),
             symbol: symbol.replace("ck", ""),
             balance: None,
+            withdrawable_state: None,
             fees: TokenBalance::new(fees, decimals),
             root: None,
             ledger,
@@ -541,13 +602,13 @@ impl<const A: bool> Canisters<A> {
         let canister_id: Option<Principal> = token_owner_details
             .iter()
             .find(|controller| controller.ends_with("-cai"))
-            .map(|controller| Principal::from_text(controller))
+            .map(Principal::from_text)
             .transpose()
             .map_err(|e| error::Error::YralCanister(e.to_string()))?;
         let principal_id: Option<Principal> = token_owner_details
             .iter()
             .find(|controller| !controller.ends_with("-cai"))
-            .map(|controller| Principal::from_text(controller))
+            .map(Principal::from_text)
             .transpose()
             .map_err(|e| error::Error::YralCanister(e.to_string()))?;
         match (canister_id, principal_id) {

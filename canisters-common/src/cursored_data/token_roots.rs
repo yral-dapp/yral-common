@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use candid::Principal;
-use canisters_client::individual_user_template::Result15;
+use canisters_client::individual_user_template::Result16;
 use futures_util::{
     future,
     stream::{self, FuturesOrdered, FuturesUnordered},
@@ -34,6 +34,7 @@ pub struct TokenRootList<TkInfo: TokenInfoProvider> {
     pub user_canister: Principal,
     pub user_principal: Principal,
     pub nsfw_detector: TkInfo,
+    pub exclude: Vec<RootType>,
 }
 
 pub async fn eligible_non_yral_supported_tokens(
@@ -107,7 +108,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
 
         let mut tokens_fetched = 0;
         let mut tokens: Vec<TokenListResponse> = match tokens {
-            Result15::Ok(v) => {
+            Result16::Ok(v) => {
                 tokens_fetched = v.len();
                 v.into_iter()
                     .map(|t| async move {
@@ -151,7 +152,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                     .collect::<Vec<TokenListResponse>>()
                     .await
             }
-            Result15::Err(_) => vec![],
+            Result16::Err(_) => vec![],
         };
 
         println!("{tokens_fetched}, {}, {}", end - start, tokens.len());
@@ -161,6 +162,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
             let mut rep = stream::iter(
                 [
                     RootType::COYNS,
+                    RootType::CENTS,
                     RootType::from_str("btc").unwrap(),
                     RootType::from_str("usdc").unwrap(),
                 ]
@@ -188,7 +190,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                             None
                         }
                     }
-                    RootType::COYNS => {
+                    RootType::COYNS | RootType::CENTS => {
                         let metadata = self
                             .canisters
                             .token_metadata_by_root_type(
@@ -219,6 +221,7 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                 )
                 .await?,
             );
+            rep.retain(|item| !self.exclude.contains(&item.root));
             tokens.splice(0..0, rep);
         }
         Ok(PageEntry {
