@@ -143,6 +143,7 @@ impl<const A: bool> Canisters<A> {
                     decimals: 8,
                     is_nsfw: false,
                     token_owner: None,
+                    timestamp: None,
                 }))
             }
             RootType::CENTS => {
