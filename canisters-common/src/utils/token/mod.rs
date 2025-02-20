@@ -533,7 +533,7 @@ impl<const A: bool> Canisters<A> {
         let cycle_duration = config.cycle_duration;
         let claim_limit = config.claim_limit;
 
-        println!("DEBUG ----> cycle duration is {}", cycle_duration);
+        println!("cycle duration is {}", cycle_duration);
 
         let token_owner = self.individual_user(token_owner).await;
         let canisters = token_owner.deployed_cdao_canisters().await?;
