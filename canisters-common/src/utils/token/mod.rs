@@ -257,9 +257,9 @@ impl<const A: bool> Canisters<A> {
         let fees = ledger_can.icrc_1_fee().await?;
         let decimals = ledger_can.icrc_1_decimals().await?;
 
-        // let token = nsfw_detector.get_token_by_id(token_root.to_string()).await;
+        let token = nsfw_detector.get_token_by_id(token_root.to_string()).await;
 
-        let is_nsfw = false; // token.map(|token| token.is_nsfw).unwrap_or(false);
+        let is_nsfw = token.map(|token| token.is_nsfw).unwrap_or(false);
 
         let token_owner = self.get_token_owner(token_root).await?;
 
