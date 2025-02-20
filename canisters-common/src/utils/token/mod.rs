@@ -1,4 +1,5 @@
-use canisters_client::sns_swap::GetInitArg;
+use canisters_client::sns_swap::{GetInitArg, GetLifecycleArg};
+use core::time;
 use pump_n_dump_common::{rest::BalanceInfoResponse, WithdrawalState};
 use std::{fmt::Display, str::FromStr};
 
@@ -248,10 +249,9 @@ impl<const A: bool> Canisters<A> {
         let swap_can = self.sns_swap(swap).await;
 
         let timestamp = swap_can
-            .get_init(GetInitArg {})
+            .get_lifecycle(GetLifecycleArg {})
             .await?
-            .init
-            .map(|init| init.swap_start_timestamp_seconds.unwrap_or(0))
+            .decentralization_sale_open_timestamp_seconds
             .unwrap_or(0) as i64;
 
         let fees = ledger_can.icrc_1_fee().await?;
