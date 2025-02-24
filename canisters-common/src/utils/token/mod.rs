@@ -126,7 +126,7 @@ impl<const A: bool> Canisters<A> {
                 let bal = indiv.get_utility_token_balance().await?;
 
                 Ok(Some(TokenMetadata {
-                    logo_b64: "/img/coyns.png".to_string(),
+                    logo_b64: "/img/common/coyns.webp".to_string(),
                     name: "COYNS".to_string(),
                     description: "".to_string(),
                     symbol: "COYNS".to_string(),
@@ -168,7 +168,7 @@ impl<const A: bool> Canisters<A> {
                 };
 
                 Ok(Some(TokenMetadata {
-                    logo_b64: "/img/cents.png".to_string(),
+                    logo_b64: "/img/pumpdump/cents.webp".to_string(),
                     name: CENT_TOKEN_NAME.into(),
                     description: "".to_string(),
                     symbol: CENT_TOKEN_NAME.into(),
