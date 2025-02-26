@@ -5,6 +5,7 @@ use crate::metrics::{Metric, MetricEvent};
 const VECTOR_DB_URL: &str = "https://vector-dev-yral.fly.dev/";
 
 /// Sends metrics to Yral's vectordb instance
+#[derive(Clone)]
 pub struct VectorDbMetricTx {
     client: reqwest::Client,
     ingest_url: Url,
