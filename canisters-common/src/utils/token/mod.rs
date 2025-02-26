@@ -558,11 +558,9 @@ impl<const A: bool> Canisters<A> {
                 return principals.iter().any(|(principal, status)| {
                     if principal == &user_principal {
                         return match status {
-                            ClaimStatus::Claimed(claim_time) => match claim_time {
-                                Some(claim_time) => (*claim_time / 1000) > cycle_start,
-                                None => false,
-                            },
-                            ClaimStatus::Claiming => true,
+                            ClaimStatus::ClaimedWithTimestamp(claim_time) => {
+                                (*claim_time / 1000) > cycle_start
+                            }
                             _ => false,
                         };
                     }
