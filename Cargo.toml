@@ -32,3 +32,4 @@ yral-identity = { git = "https://github.com/yral-dapp/yral-identity", rev = "adb
 futures-util = "0.3.31"
 uuid = { version = "1.11.0", features = ["serde"] }
 trait-variant = "0.1.2"
+serde_with = "3.12.0"

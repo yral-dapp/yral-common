@@ -13,4 +13,8 @@ impl SealedMetric for CentsWithdrawal {
     fn tag(&self) -> String {
         "cents_withdrawal".into()
     }
+
+    fn user_id(&self) -> Option<String> {
+        Some(self.user_canister.to_text())
+    }
 }
