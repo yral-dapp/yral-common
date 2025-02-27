@@ -9,6 +9,8 @@ trait-variant.workspace = true
 candid.workspace = true
 log.workspace = true
 web-time.workspace = true
+serde_with.workspace = true
+
 reqwest = { version = "0.12.12", default-features = false, features = ["json"] }
 wasm-bindgen-futures = { version = "0.4.5", optional = true }
 

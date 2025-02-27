@@ -11,6 +11,7 @@ mod sealed_metric {
 
     pub trait SealedMetric: Serialize + Debug {
         fn tag(&self) -> String;
+        fn user_id(&self) -> Option<String>;
     }
 }
 
@@ -27,6 +28,7 @@ pub enum EventSource {
 pub struct MetricEvent<M: Metric> {
     pub source: EventSource,
     pub tag: String,
+    pub user_id: Option<String>,
     pub metric: M,
     pub unix_timestamp_secs: u64,
 }
@@ -36,6 +38,7 @@ impl<M: Metric> MetricEvent<M> {
         Self {
             source,
             tag: metric.tag(),
+            user_id: metric.user_id(),
             metric,
             unix_timestamp_secs: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
