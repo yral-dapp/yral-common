@@ -36,6 +36,7 @@ impl<T: MetricEventTx> LocalMetricEventTx for T {
     }
 }
 
+#[derive(Clone)]
 pub struct LocalMetricTx<Tx> {
     source: EventSource,
     tx: Tx,

@@ -9,6 +9,7 @@ use super::LocalMetricEventTx;
 /// takes a metric sender and converts it into non-blocking concurrent metric sender
 /// each future is spawned on the current thread to be run in the background
 /// PS: if metric is not sent, the metric is ignored and logged instead
+#[derive(Clone)]
 pub struct JsSpawnMetricTx<Tx: LocalMetricEventTx + Clone + 'static>(pub Tx);
 
 impl<Tx: LocalMetricEventTx + Clone + 'static> LocalMetricEventTx for JsSpawnMetricTx<Tx> {
