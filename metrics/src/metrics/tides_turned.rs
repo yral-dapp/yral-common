@@ -5,9 +5,7 @@ use super::sealed_metric::SealedMetric;
 
 #[derive(Serialize, Clone, Debug)]
 pub struct TidesTurned {
-    pub user_principal: Principal,
     pub user_canister: Principal,
-    pub is_registered: bool,
     pub staked_amount: u64,
     pub round_num: u64,
     pub user_pumps: u64,
