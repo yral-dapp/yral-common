@@ -48,3 +48,27 @@ impl<M: Metric> MetricEvent<M> {
         }
     }
 }
+
+#[derive(Serialize, Debug)]
+pub struct MetricEventList<M: Metric> {
+    pub source: EventSource,
+    pub tag: String,
+    pub metric: Vec<MetricEvent<M>>,
+    pub user_id: Option<String>,
+    pub unix_timestamp_secs: u64,
+}
+
+impl<M: Metric> MetricEventList<M> {
+    pub fn new(source: EventSource, tag: String, metric: Vec<MetricEvent<M>>) -> Self {
+        Self {
+            source,
+            tag,
+            metric,
+            user_id: None,
+            unix_timestamp_secs: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs(),
+        }
+    }
+}

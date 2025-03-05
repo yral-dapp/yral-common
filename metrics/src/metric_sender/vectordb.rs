@@ -1,8 +1,9 @@
 use reqwest::Url;
+// use worker::console_log;
 
-use crate::metrics::{Metric, MetricEvent};
+use crate::metrics::{Metric, MetricEvent, MetricEventList};
 
-const VECTOR_DB_URL: &str = "https://vector-dev-yral.fly.dev/";
+const VECTOR_DB_URL: &str = "https://vector-dev-yral.fly.dev";
 
 /// Sends metrics to Yral's vectordb instance
 #[derive(Clone)]
@@ -22,12 +23,28 @@ impl Default for VectorDbMetricTx {
 
 impl VectorDbMetricTx {
     async fn push_inner<M: Metric + Send>(&self, ev: MetricEvent<M>) -> Result<(), reqwest::Error> {
-        _ = self
+        // console_log!("single VectorDbMetricTx pushing inner: {ev:?}");
+        _ = self.client.post(VECTOR_DB_URL).json(&ev).send().await?;
+        // console_log!("single VectorDbMetricTx pushing inner end");
+        Ok(())
+    }
+
+    async fn push_list_inner<M: Metric + Send>(
+        &self,
+        ev: MetricEventList<M>,
+    ) -> Result<(), reqwest::Error> {
+        // convert to json string using serde and console_log
+        // let json_str = serde_json::to_string(&ev).unwrap();
+
+        // console_log!("VectorDbMetricTx pushing list: {json_str:?}");
+        let res = self
             .client
             .post(self.ingest_url.clone())
             .json(&ev)
             .send()
-            .await?;
+            .await;
+        // console_log!("VectorDbMetricTx response: {res:?}");
+        // console_log!("VectorDbMetricTx end");
         Ok(())
     }
 }
@@ -39,6 +56,14 @@ impl super::LocalMetricEventTx for VectorDbMetricTx {
     async fn push_local<M: Metric + Send>(&self, ev: MetricEvent<M>) -> Result<(), Self::Error> {
         self.push_inner(ev).await
     }
+
+    async fn push_list_local<M: Metric + Send>(
+        &self,
+        ev: MetricEventList<M>,
+    ) -> Result<(), Self::Error> {
+        // console_log!("VectorDbMetricTx LocalMetricEventTx pushing list: {ev:?}");
+        self.push_list_inner(ev).await
+    }
 }
 
 #[cfg(not(feature = "js"))]
@@ -47,5 +72,9 @@ impl super::MetricEventTx for VectorDbMetricTx {
 
     async fn push<M: Metric + Send>(&self, ev: MetricEvent<M>) -> Result<(), Self::Error> {
         self.push_inner(ev).await
+    }
+
+    async fn push_list<M: Metric + Send>(&self, ev: MetricEventList<M>) -> Result<(), Self::Error> {
+        self.push_list_inner(ev).await
     }
 }
