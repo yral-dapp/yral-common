@@ -7,7 +7,7 @@ use futures_util::{
     stream::{self, FuturesOrdered, FuturesUnordered},
     StreamExt,
 };
-use grpc_traits::TokenInfoProvider;
+use grpc_traits::{AirdropConfigProvider, TokenInfoProvider};
 
 use crate::{
     consts::SUPPORTED_NON_YRAL_TOKENS_ROOT,
@@ -29,12 +29,13 @@ impl KeyedData for RootType {
 }
 
 #[derive(Clone)]
-pub struct TokenRootList<TkInfo: TokenInfoProvider> {
+pub struct TokenRootList<TkInfo: TokenInfoProvider, AirDrpCfgProvider: AirdropConfigProvider> {
     pub viewer_principal: Principal,
     pub canisters: Canisters<false>,
     pub user_canister: Principal,
     pub user_principal: Principal,
     pub nsfw_detector: TkInfo,
+    pub airdrop_config_provider: AirDrpCfgProvider,
     pub exclude: Vec<RootType>,
 }
 
@@ -95,7 +96,11 @@ impl KeyedData for TokenListResponse {
     }
 }
 
-impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRootList<TkInfo> {
+impl<
+        TkInfo: TokenInfoProvider + Send + Sync,
+        AirDrpCfgProvider: AirdropConfigProvider + Send + Sync,
+    > CursoredDataProvider for TokenRootList<TkInfo, AirDrpCfgProvider>
+{
     type Data = TokenListResponse;
     type Error = Error;
 
@@ -129,6 +134,8 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                                 metadata.token_owner.clone().unwrap().canister_id,
                                 Principal::from_text(root.to_string()).unwrap(),
                                 self.viewer_principal,
+                                metadata.timestamp,
+                                &self.airdrop_config_provider,
                             )
                             .await
                             .ok()?;
