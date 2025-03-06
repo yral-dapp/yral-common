@@ -1,7 +1,6 @@
 use std::convert::Infallible;
 
 use wasm_bindgen_futures::spawn_local;
-// use worker::console_log;
 
 use crate::metrics::{Metric, MetricEvent, MetricEventList};
 
@@ -35,7 +34,6 @@ impl<Tx: LocalMetricEventTx + Clone + 'static> LocalMetricEventTx for JsSpawnMet
         ev: MetricEventList<M>,
     ) -> Result<(), Self::Error> {
         let tx = self.0.clone();
-        // console_log!("JsSpawnMetricTx pushing list: {ev:?}");
         spawn_local(async move {
             let res = tx.push_list_local(ev).await;
             if let Err(e) = res {

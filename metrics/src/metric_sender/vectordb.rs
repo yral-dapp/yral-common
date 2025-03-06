@@ -1,5 +1,4 @@
 use reqwest::Url;
-// use worker::console_log;
 
 use crate::metrics::{Metric, MetricEvent, MetricEventList};
 
@@ -23,9 +22,12 @@ impl Default for VectorDbMetricTx {
 
 impl VectorDbMetricTx {
     async fn push_inner<M: Metric + Send>(&self, ev: MetricEvent<M>) -> Result<(), reqwest::Error> {
-        // console_log!("single VectorDbMetricTx pushing inner: {ev:?}");
-        _ = self.client.post(VECTOR_DB_URL).json(&ev).send().await?;
-        // console_log!("single VectorDbMetricTx pushing inner end");
+        _ = self
+            .client
+            .post(self.ingest_url.clone())
+            .json(&ev)
+            .send()
+            .await?;
         Ok(())
     }
 
@@ -33,18 +35,12 @@ impl VectorDbMetricTx {
         &self,
         ev: MetricEventList<M>,
     ) -> Result<(), reqwest::Error> {
-        // convert to json string using serde and console_log
-        // let json_str = serde_json::to_string(&ev).unwrap();
-
-        // console_log!("VectorDbMetricTx pushing list: {json_str:?}");
         let res = self
             .client
             .post(self.ingest_url.clone())
             .json(&ev)
             .send()
             .await;
-        // console_log!("VectorDbMetricTx response: {res:?}");
-        // console_log!("VectorDbMetricTx end");
         Ok(())
     }
 }
@@ -61,7 +57,6 @@ impl super::LocalMetricEventTx for VectorDbMetricTx {
         &self,
         ev: MetricEventList<M>,
     ) -> Result<(), Self::Error> {
-        // console_log!("VectorDbMetricTx LocalMetricEventTx pushing list: {ev:?}");
         self.push_list_inner(ev).await
     }
 }

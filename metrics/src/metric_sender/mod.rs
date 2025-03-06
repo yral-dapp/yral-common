@@ -5,8 +5,6 @@ pub mod vectordb;
 
 use std::{error::Error, future::Future};
 
-// use worker::console_log;
-
 use crate::metrics::{EventSource, Metric, MetricEvent, MetricEventList};
 
 pub trait MetricEventTx: Send {
@@ -82,9 +80,6 @@ impl<Tx: LocalMetricEventTx> LocalMetricTx<Tx> {
             .map(|m| MetricEvent::new(self.source, m))
             .collect();
 
-        // console_log!("LocalMetricEventTx pushing list: {tag:?}");
-        // console_log!("LocalMetricEventTx events: {events:?}");
-
         self.tx
             .push_list_local(MetricEventList::new(self.source, tag, events))
             .await
@@ -114,9 +109,6 @@ impl<Tx: MetricEventTx> MetricTx<Tx> {
             .into_iter()
             .map(|m| MetricEvent::new(self.source, m))
             .collect();
-
-        // console_log!("pushing list: {tag:?}");
-        // console_log!("events: {events:?}");
 
         self.tx
             .push_list(MetricEventList::new(self.source, tag, events))

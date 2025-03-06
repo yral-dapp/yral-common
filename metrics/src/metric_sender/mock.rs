@@ -1,7 +1,5 @@
 use std::{convert::Infallible, fmt::Debug};
 
-// use worker::console_log;
-
 use crate::metrics::{Metric, MetricEvent, MetricEventList};
 
 use super::{LocalMetricEventTx, MetricEventTx};
@@ -71,7 +69,6 @@ impl<Tx: MetricEventTx + Sync> MetricEventTx for MaybeMockMetricEventTx<Tx> {
     ) -> Result<(), Self::Error> {
         match self {
             Self::Mock(m) => {
-                // console_log!("MockMetricEventTx MetricEventTx pushing list: {ev:?}");
                 m.push_list(ev).await.unwrap();
                 Ok(())
             }
@@ -114,7 +111,6 @@ impl<Tx: LocalMetricEventTx> LocalMetricEventTx for MaybeMockLocalMetricEventTx<
     ) -> Result<(), Self::Error> {
         match self {
             Self::Mock(m) => {
-                // console_log!("MockMetricEventTx LocalMetricEventTx pushing list: {ev:?}");
                 m.push_list(ev).await.unwrap();
                 Ok(())
             }

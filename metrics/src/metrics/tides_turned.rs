@@ -1,4 +1,4 @@
-use candid::{Nat, Principal};
+use candid::Principal;
 use serde::Serialize;
 
 use super::sealed_metric::SealedMetric;
