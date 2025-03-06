@@ -35,12 +35,12 @@ impl VectorDbMetricTx {
         &self,
         ev: MetricEventList<M>,
     ) -> Result<(), reqwest::Error> {
-        let res = self
+        _ = self
             .client
             .post(self.ingest_url.clone())
             .json(&ev)
             .send()
-            .await;
+            .await?;
         Ok(())
     }
 }
