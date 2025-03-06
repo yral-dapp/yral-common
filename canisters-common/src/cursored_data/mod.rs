@@ -18,7 +18,7 @@ pub trait KeyedData {
     fn key(&self) -> Self::Key;
 }
 pub trait CursoredDataProvider {
-    type Data: KeyedData + Clone + 'static;
+    type Data: KeyedData + Clone + 'static + Send;
     type Error: Error;
 
     fn get_by_cursor(
