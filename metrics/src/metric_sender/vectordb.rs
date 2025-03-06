@@ -1,6 +1,6 @@
 use reqwest::Url;
 
-use crate::metrics::{Metric, MetricEvent};
+use crate::metrics::{Metric, MetricEvent, MetricEventList};
 
 const VECTOR_DB_URL: &str = "https://vector-dev-yral.fly.dev/";
 
@@ -30,6 +30,19 @@ impl VectorDbMetricTx {
             .await?;
         Ok(())
     }
+
+    async fn push_list_inner<M: Metric + Send>(
+        &self,
+        ev: MetricEventList<M>,
+    ) -> Result<(), reqwest::Error> {
+        _ = self
+            .client
+            .post(self.ingest_url.clone())
+            .json(&ev)
+            .send()
+            .await?;
+        Ok(())
+    }
 }
 
 #[cfg(feature = "js")]
@@ -39,6 +52,13 @@ impl super::LocalMetricEventTx for VectorDbMetricTx {
     async fn push_local<M: Metric + Send>(&self, ev: MetricEvent<M>) -> Result<(), Self::Error> {
         self.push_inner(ev).await
     }
+
+    async fn push_list_local<M: Metric + Send>(
+        &self,
+        ev: MetricEventList<M>,
+    ) -> Result<(), Self::Error> {
+        self.push_list_inner(ev).await
+    }
 }
 
 #[cfg(not(feature = "js"))]
@@ -47,5 +67,9 @@ impl super::MetricEventTx for VectorDbMetricTx {
 
     async fn push<M: Metric + Send>(&self, ev: MetricEvent<M>) -> Result<(), Self::Error> {
         self.push_inner(ev).await
+    }
+
+    async fn push_list<M: Metric + Send>(&self, ev: MetricEventList<M>) -> Result<(), Self::Error> {
+        self.push_list_inner(ev).await
     }
 }

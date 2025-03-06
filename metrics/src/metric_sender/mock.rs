@@ -1,6 +1,6 @@
 use std::{convert::Infallible, fmt::Debug};
 
-use crate::metrics::{Metric, MetricEvent};
+use crate::metrics::{Metric, MetricEvent, MetricEventList};
 
 use super::{LocalMetricEventTx, MetricEventTx};
 
@@ -19,6 +19,15 @@ impl MetricEventTx for MockMetricEventTx {
     async fn push<M: Metric + Send + 'static>(
         &self,
         ev: MetricEvent<M>,
+    ) -> Result<(), Self::Error> {
+        self.push_inner(ev);
+
+        Ok(())
+    }
+
+    async fn push_list<M: Metric + Send + 'static>(
+        &self,
+        ev: MetricEventList<M>,
     ) -> Result<(), Self::Error> {
         self.push_inner(ev);
 
@@ -53,6 +62,19 @@ impl<Tx: MetricEventTx + Sync> MetricEventTx for MaybeMockMetricEventTx<Tx> {
             Self::Real(m) => m.push(ev).await,
         }
     }
+
+    async fn push_list<M: Metric + Send + 'static>(
+        &self,
+        ev: MetricEventList<M>,
+    ) -> Result<(), Self::Error> {
+        match self {
+            Self::Mock(m) => {
+                m.push_list(ev).await.unwrap();
+                Ok(())
+            }
+            Self::Real(m) => m.push_list(ev).await,
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -80,6 +102,19 @@ impl<Tx: LocalMetricEventTx> LocalMetricEventTx for MaybeMockLocalMetricEventTx<
                 Ok(())
             }
             Self::Real(m) => m.push_local(ev).await,
+        }
+    }
+
+    async fn push_list_local<M: Metric + Send + 'static>(
+        &self,
+        ev: MetricEventList<M>,
+    ) -> Result<(), Self::Error> {
+        match self {
+            Self::Mock(m) => {
+                m.push_list(ev).await.unwrap();
+                Ok(())
+            }
+            Self::Real(m) => m.push_list_local(ev).await,
         }
     }
 }
