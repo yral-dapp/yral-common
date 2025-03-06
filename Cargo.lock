@@ -1191,12 +1191,14 @@ dependencies = [
  "candid",
  "ed25519-consensus",
  "futures-util",
+ "getrandom 0.2.15",
  "hex",
  "http",
  "http-body",
  "ic-certification",
  "ic-transport-types",
  "ic-verify-bls-signature",
+ "js-sys",
  "k256",
  "leb128",
  "p256",
@@ -1218,6 +1220,9 @@ dependencies = [
  "tokio",
  "tower-service",
  "url",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
@@ -1466,6 +1471,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0242819d153cba4b4b05a5a8f2a7e9bbf97b6055b2a002b395c96b5ff3c0222"
 dependencies = [
  "cfg-if",
+ "js-sys",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
@@ -2460,6 +2468,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "send_wrapper"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd0b0ec5f1c1ca621c432a25813d8d60c88abe6d3e08a3eb9cf37d97a0fe3d73"
+dependencies = [
+ "futures-core",
+]
+
+[[package]]
 name = "serde"
 version = "1.0.217"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2885,6 +2902,7 @@ checksum = "35e7868883861bd0e56d9ac6efcaaca0d6d5d82a2a7ec8209ff492c07cf37b21"
 dependencies = [
  "deranged",
  "itoa",
+ "js-sys",
  "num-conv",
  "powerfmt",
  "serde",
@@ -3614,11 +3632,13 @@ dependencies = [
  "ciborium",
  "crc32fast",
  "futures-util",
+ "getrandom 0.2.15",
  "ic-agent",
  "k256",
  "log",
  "reqwest",
  "rust_decimal",
+ "send_wrapper",
  "serde",
  "sns-validation",
  "thiserror 2.0.11",
