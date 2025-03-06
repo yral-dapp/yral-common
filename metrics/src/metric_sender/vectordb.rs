@@ -2,7 +2,7 @@ use reqwest::Url;
 
 use crate::metrics::{Metric, MetricEvent, MetricEventList};
 
-const VECTOR_DB_URL: &str = "https://vector-dev-yral.fly.dev";
+const VECTOR_DB_URL: &str = "https://vector-dev-yral.fly.dev/";
 
 /// Sends metrics to Yral's vectordb instance
 #[derive(Clone)]
