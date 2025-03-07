@@ -1,5 +1,4 @@
 use canisters_client::sns_swap::{GetInitArg, GetLifecycleArg};
-use core::time;
 use pump_n_dump_common::{rest::BalanceInfoResponse, WithdrawalState};
 use std::{fmt::Display, str::FromStr};
 
@@ -549,7 +548,13 @@ impl<const A: bool> Canisters<A> {
             if token.root == token_root {
                 let principals = token.airdrop_info.principals_who_successfully_claimed;
 
-                let num_claims = principals.len();
+                let num_claims = principals
+                    .iter()
+                    .filter(|(_, claim)| match claim {
+                        ClaimStatus::ClaimedWithTimestamp(_) => true,
+                        _ => false,
+                    })
+                    .count();
 
                 if num_claims >= claim_limit {
                     return true;
