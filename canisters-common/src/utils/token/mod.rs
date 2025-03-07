@@ -544,6 +544,9 @@ impl<const A: bool> Canisters<A> {
         let cycle_num = (now - (created_at as u64)) / cycle_duration;
         let cycle_start = (created_at as u64) + (cycle_num * cycle_duration);
 
+        println!("cycle num is {}", cycle_num);
+        println!("cycle start is {}", cycle_start);
+
         let is_airdrop_claimed = canisters.into_iter().any(|token| {
             if token.root == token_root {
                 let principals = token.airdrop_info.principals_who_successfully_claimed;
@@ -555,6 +558,8 @@ impl<const A: bool> Canisters<A> {
                         _ => false,
                     })
                     .count();
+
+                println!("num claims is {}", num_claims);
 
                 if num_claims >= claim_limit {
                     return true;
