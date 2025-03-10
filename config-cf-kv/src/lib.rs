@@ -26,12 +26,7 @@ impl KVConfig {
             None => key.to_string(),
         };
 
-        let url = url::Url::parse(&self.url)
-            .map(|url| url.join(&key_and_ovride).map(|url| url.to_string()));
-
-        let Ok(Ok(url)) = url else {
-            return Err(KVFetchError::InvalidUrlOrKeyName);
-        };
+        let url =  format!("{}/{}", self.url, key_and_ovride);
 
         Ok(url)
     }
@@ -73,19 +68,28 @@ impl KVConfig {
         Ok(value)
     }
 
-    pub async fn get<K: ConfigKey>(&self, key: K, ovride: Option<String>) -> Result<K::Value, KVFetchError> {
+    pub async fn get<K: ConfigKey>(
+        &self,
+        key: K,
+        ovride: Option<String>,
+    ) -> Result<K::Value, KVFetchError> {
         let url = self.url(&key, &ovride)?;
 
         match self.get_value_from_url::<K>(url).await {
             Err(KVFetchError::KeyNotFound) => {
                 let url = self.url(&key, &None::<String>)?;
                 self.get_value_from_url::<K>(url).await
-            },
-            result => result
+            }
+            result => result,
         }
     }
 
-    pub async fn set<K: ConfigKey>(&self, key: K, value: K::Value, ovride: Option<String>) -> Result<(), KVFetchError> {
+    pub async fn set<K: ConfigKey>(
+        &self,
+        key: K,
+        value: K::Value,
+        ovride: Option<String>,
+    ) -> Result<(), KVFetchError> {
         let url = self.url(&key, &ovride)?;
 
         let value = match serde_json::to_string(&value) {

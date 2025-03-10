@@ -33,5 +33,5 @@ pub struct AirdropConfig {
 }
 
 pub trait AirdropConfigProvider {
-    fn get_airdrop_config(&self) -> impl Future<Output = AirdropConfig> + Send;
+    fn get_airdrop_config(&self, symbol: String) -> impl Future<Output = AirdropConfig> + Send;
 }
