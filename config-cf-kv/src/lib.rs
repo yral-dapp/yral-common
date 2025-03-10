@@ -20,9 +20,14 @@ impl KVConfig {
         KVConfig { url, token }
     }
 
-    fn url<K: ConfigKey>(&self, key: K) -> Result<String, KVFetchError> {
+    fn url<K: ConfigKey>(&self, key: &K, ovride: &Option<String>) -> Result<String, KVFetchError> {
+        let key_and_ovride = match ovride {
+            Some(ovride) => format!("{}:{}", key, ovride),
+            None => key.to_string(),
+        };
+
         let url = url::Url::parse(&self.url)
-            .map(|url| url.join(&key.to_string()).map(|url| url.to_string()));
+            .map(|url| url.join(&key_and_ovride).map(|url| url.to_string()));
 
         let Ok(Ok(url)) = url else {
             return Err(KVFetchError::InvalidUrlOrKeyName);
@@ -31,9 +36,10 @@ impl KVConfig {
         Ok(url)
     }
 
-    pub async fn get<K: ConfigKey>(&self, key: K) -> Result<K::Value, KVFetchError> {
-        let url = self.url(key)?;
-
+    async fn get_value_from_url<K: ConfigKey>(
+        &self,
+        url: String,
+    ) -> Result<<K as ConfigKey>::Value, KVFetchError> {
         let client = reqwest::Client::new();
         let value = match client
             .get(url)
@@ -67,8 +73,20 @@ impl KVConfig {
         Ok(value)
     }
 
-    pub async fn set<K: ConfigKey>(&self, key: K, value: K::Value) -> Result<(), KVFetchError> {
-        let url = self.url(key)?;
+    pub async fn get<K: ConfigKey>(&self, key: K, ovride: Option<String>) -> Result<K::Value, KVFetchError> {
+        let url = self.url(&key, &ovride)?;
+
+        match self.get_value_from_url::<K>(url).await {
+            Err(KVFetchError::KeyNotFound) => {
+                let url = self.url(&key, &None::<String>)?;
+                self.get_value_from_url::<K>(url).await
+            },
+            result => result
+        }
+    }
+
+    pub async fn set<K: ConfigKey>(&self, key: K, value: K::Value, ovride: Option<String>) -> Result<(), KVFetchError> {
+        let url = self.url(&key, &ovride)?;
 
         let value = match serde_json::to_string(&value) {
             Err(err) => return Err(KVFetchError::Serde(err)),
