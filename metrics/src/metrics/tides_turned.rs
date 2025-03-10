@@ -15,6 +15,8 @@ pub struct TidesTurned {
     pub cumulative_pumps: u64,
     pub cumulative_dumps: u64,
     pub token_root: Principal,
+    pub page_location: String,
+    pub host: String,
 }
 
 impl SealedMetric for TidesTurned {
