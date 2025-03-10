@@ -26,7 +26,7 @@ impl KVConfig {
             None => key.to_string(),
         };
 
-        let url =  format!("{}/{}", self.url, key_and_ovride);
+        let url = format!("{}/{}", self.url, key_and_ovride);
 
         Ok(url)
     }
@@ -34,6 +34,7 @@ impl KVConfig {
     async fn get_value_from_url<K: ConfigKey>(
         &self,
         url: String,
+        fallback: bool,
     ) -> Result<<K as ConfigKey>::Value, KVFetchError> {
         let client = reqwest::Client::new();
         let value = match client
@@ -57,9 +58,9 @@ impl KVConfig {
 
                     value
                 }
-                404 => match <K as ConfigKey>::fallback() {
-                    Some(value) => value,
-                    None => return Err(KVFetchError::KeyNotFound),
+                404 => match (<K as ConfigKey>::fallback(), fallback) {
+                    (Some(value), true) => value,
+                    _ => return Err(KVFetchError::KeyNotFound),
                 },
                 status_code => return Err(KVFetchError::StatusNotOk(status_code)),
             },
@@ -75,10 +76,10 @@ impl KVConfig {
     ) -> Result<K::Value, KVFetchError> {
         let url = self.url(&key, &ovride)?;
 
-        match self.get_value_from_url::<K>(url).await {
+        match self.get_value_from_url::<K>(url, false).await {
             Err(KVFetchError::KeyNotFound) => {
                 let url = self.url(&key, &None::<String>)?;
-                self.get_value_from_url::<K>(url).await
+                self.get_value_from_url::<K>(url, true).await
             }
             result => result,
         }
