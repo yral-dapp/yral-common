@@ -25,6 +25,19 @@ pub enum EventSource {
     PumpNDumpWorker,
 }
 
+impl EventSource {
+    pub fn page_location(&self) -> String {
+        match self {
+            EventSource::PumpNDumpWorker => "https://pumpdump.wtf/".to_string(),
+        }
+    }
+
+    pub fn host(page_location: &str) -> String {
+        let url = reqwest::Url::parse(page_location).unwrap();
+        url.host_str().unwrap().to_string()
+    }
+}
+
 #[derive(Serialize, Debug)]
 pub struct MetricEvent<M: Metric> {
     pub source: EventSource,
@@ -32,10 +45,14 @@ pub struct MetricEvent<M: Metric> {
     pub user_id: Option<String>,
     pub metric: M,
     pub unix_timestamp_secs: u64,
+    pub page_location: String,
+    pub host: String,
 }
 
 impl<M: Metric> MetricEvent<M> {
     pub fn new(source: EventSource, metric: M) -> Self {
+        let page_location = source.page_location();
+
         Self {
             source,
             tag: metric.tag(),
@@ -45,6 +62,8 @@ impl<M: Metric> MetricEvent<M> {
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
                 .as_secs(),
+            page_location: page_location.clone(),
+            host: EventSource::host(page_location.as_str()),
         }
     }
 }
