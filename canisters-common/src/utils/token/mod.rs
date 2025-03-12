@@ -517,8 +517,38 @@ impl<const A: bool> Canisters<A> {
         Ok(())
     }
 
+    pub async fn get_cent_airdrop_status(
+        &self,
+        config_provider: &impl AirdropConfigProvider,
+    ) -> Result<bool> {
+        let claim_time = self
+            .individual_user(self.user_canister)
+            .await
+            .request_airdrop_cent_claim_time()
+            .await?;
+
+        let Some(claim_time) = claim_time else {
+            return Ok(true);
+        };
+
+        let created_at = 1741772357;
+
+        let config = config_provider.get_airdrop_config("CENTS".to_string()).await;
+        let cycle_duration = config.cycle_duration;
+
+        let now = web_time::SystemTime::now()
+            .duration_since(web_time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        let cycle_num = (now - (created_at as u64)) / cycle_duration;
+        let cycle_start = (created_at as u64) + (cycle_num * cycle_duration);
+
+        Ok((claim_time / 1000) > cycle_start)
+    }
+
     pub async fn get_airdrop_status(
         &self,
+        symbol: String,
         token_owner: Principal,
         token_root: Principal,
         user_principal: Principal,
@@ -529,7 +559,7 @@ impl<const A: bool> Canisters<A> {
             return Ok(true);
         };
 
-        let config = config_provider.get_airdrop_config().await;
+        let config = config_provider.get_airdrop_config(symbol).await;
         let cycle_duration = config.cycle_duration;
         let claim_limit = config.claim_limit;
 

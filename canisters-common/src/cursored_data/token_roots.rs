@@ -131,6 +131,7 @@ impl<
                         let airdrop_claimed = self
                             .canisters
                             .get_airdrop_status(
+                                metadata.symbol.clone(),
                                 metadata.token_owner.clone().unwrap().canister_id,
                                 Principal::from_text(root.to_string()).unwrap(),
                                 self.viewer_principal,
@@ -200,9 +201,18 @@ impl<
                             .await
                             .ok()??;
 
+                        let airdrop_claimed = match root_type {
+                            RootType::CENTS => self
+                                .canisters
+                                .get_cent_airdrop_status(&self.airdrop_config_provider)
+                                .await
+                                .ok()?,
+                            _ => true,
+                        };
+
                         Some(TokenListResponse {
                             root: root_type,
-                            airdrop_claimed: true,
+                            airdrop_claimed,
                             token_metadata: metadata,
                         })
                     }
