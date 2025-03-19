@@ -17,13 +17,37 @@ pub trait KeyedData {
 
     fn key(&self) -> Self::Key;
 }
-pub trait CursoredDataProvider {
-    type Data: KeyedData + Clone + 'static;
+pub trait CursoredDataProvider: Send + Sync {
+    type Data: KeyedData + Clone + 'static + Send + Sync;
     type Error: Error;
+
+    #[cfg(not(feature = "js"))]
+    fn get_by_cursor_inner(
+        &self,
+        start: usize,
+        end: usize,
+    ) -> impl Future<Output = Result<PageEntry<Self::Data>, Self::Error>> + Send;
+
+    #[cfg(feature = "js")]
+    fn get_by_cursor_inner(
+        &self,
+        start: usize,
+        end: usize,
+    ) -> impl Future<Output = Result<PageEntry<Self::Data>, Self::Error>>;
 
     fn get_by_cursor(
         &self,
         start: usize,
         end: usize,
-    ) -> impl Future<Output = Result<PageEntry<Self::Data>, Self::Error>>;
+    ) -> impl Future<Output = Result<PageEntry<Self::Data>, Self::Error>> + Send {
+        #[cfg(not(feature = "js"))]
+        {
+            self.get_by_cursor_inner(start, end)
+        }
+        #[cfg(feature = "js")]
+        {
+            use send_wrapper::SendWrapper;
+            SendWrapper::new(self.get_by_cursor_inner(start, end))
+        }
+    }
 }
