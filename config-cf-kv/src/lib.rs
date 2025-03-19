@@ -20,20 +20,22 @@ impl KVConfig {
         KVConfig { url, token }
     }
 
-    fn url<K: ConfigKey>(&self, key: K) -> Result<String, KVFetchError> {
-        let url = url::Url::parse(&self.url)
-            .map(|url| url.join(&key.to_string()).map(|url| url.to_string()));
-
-        let Ok(Ok(url)) = url else {
-            return Err(KVFetchError::InvalidUrlOrKeyName);
+    fn url<K: ConfigKey>(&self, key: &K, ovride: &Option<String>) -> Result<String, KVFetchError> {
+        let key_and_ovride = match ovride {
+            Some(ovride) => format!("{}:{}", key, ovride),
+            None => key.to_string(),
         };
+
+        let url = format!("{}/{}", self.url, key_and_ovride);
 
         Ok(url)
     }
 
-    pub async fn get<K: ConfigKey>(&self, key: K) -> Result<K::Value, KVFetchError> {
-        let url = self.url(key)?;
-
+    async fn get_value_from_url<K: ConfigKey>(
+        &self,
+        url: String,
+        fallback: bool,
+    ) -> Result<<K as ConfigKey>::Value, KVFetchError> {
         let client = reqwest::Client::new();
         let value = match client
             .get(url)
@@ -56,9 +58,9 @@ impl KVConfig {
 
                     value
                 }
-                404 => match <K as ConfigKey>::fallback() {
-                    Some(value) => value,
-                    None => return Err(KVFetchError::KeyNotFound),
+                404 => match (<K as ConfigKey>::fallback(), fallback) {
+                    (Some(value), true) => value,
+                    _ => return Err(KVFetchError::KeyNotFound),
                 },
                 status_code => return Err(KVFetchError::StatusNotOk(status_code)),
             },
@@ -67,8 +69,29 @@ impl KVConfig {
         Ok(value)
     }
 
-    pub async fn set<K: ConfigKey>(&self, key: K, value: K::Value) -> Result<(), KVFetchError> {
-        let url = self.url(key)?;
+    pub async fn get<K: ConfigKey>(
+        &self,
+        key: K,
+        ovride: Option<String>,
+    ) -> Result<K::Value, KVFetchError> {
+        let url = self.url(&key, &ovride)?;
+
+        match self.get_value_from_url::<K>(url, false).await {
+            Err(KVFetchError::KeyNotFound) => {
+                let url = self.url(&key, &None::<String>)?;
+                self.get_value_from_url::<K>(url, true).await
+            }
+            result => result,
+        }
+    }
+
+    pub async fn set<K: ConfigKey>(
+        &self,
+        key: K,
+        value: K::Value,
+        ovride: Option<String>,
+    ) -> Result<(), KVFetchError> {
+        let url = self.url(&key, &ovride)?;
 
         let value = match serde_json::to_string(&value) {
             Err(err) => return Err(KVFetchError::Serde(err)),
