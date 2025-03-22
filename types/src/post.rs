@@ -7,3 +7,15 @@ pub struct PostItem {
     pub video_id: String,
     pub nsfw_probability: f32,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct FeedRequest {
+    pub canister_id: String,
+    pub filter_results: Vec<PostItem>,
+    pub num_results: u32,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct FeedResponse {
+    pub posts: Vec<PostItem>,
+}
