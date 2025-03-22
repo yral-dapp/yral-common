@@ -1740,7 +1740,6 @@ dependencies = [
  "redis-macros",
  "serde",
  "serde-redis",
- "serde_bytes",
  "serde_json",
  "tokio",
  "utoipa",
