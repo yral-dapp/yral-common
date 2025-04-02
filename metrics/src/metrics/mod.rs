@@ -1,18 +1,23 @@
 pub mod cents_withdrawal;
+pub mod like_video;
 pub mod tides_turned;
+pub mod video_duration_watched;
+pub mod video_watched;
 
 use sealed_metric::SealedMetric;
 use serde::Serialize;
 use web_time::{SystemTime, UNIX_EPOCH};
 
-mod sealed_metric {
+pub mod sealed_metric {
     use std::fmt::Debug;
 
+    use candid::Principal;
     use serde::Serialize;
 
     pub trait SealedMetric: Serialize + Debug {
         fn tag(&self) -> String;
         fn user_id(&self) -> Option<String>;
+        fn user_canister(&self) -> Option<Principal>;
     }
 }
 
@@ -23,12 +28,14 @@ impl<T: SealedMetric> Metric for T {}
 #[derive(Serialize, Clone, Copy, Debug)]
 pub enum EventSource {
     PumpNDumpWorker,
+    Yral,
 }
 
 impl EventSource {
     pub fn page_location(&self) -> String {
         match self {
             EventSource::PumpNDumpWorker => "https://pumpdump.wtf/".to_string(),
+            EventSource::Yral => "https://yral.com/".to_string(),
         }
     }
 
