@@ -260,13 +260,7 @@ impl<const A: bool> Canisters<A> {
         }
         #[cfg(not(feature = "local"))]
         {
-            use consts::canister_ids::FALLBACK_USER_INDEX;
-            // Fallback to oldest user index
-            let user_idx = self.user_index_with(*FALLBACK_USER_INDEX).await;
-            let can = user_idx
-                .get_user_canister_id_from_user_principal_id(user_principal)
-                .await?;
-            Ok(can)
+            Ok(None)
         }
     }
 
@@ -303,16 +297,11 @@ impl<const A: bool> Canisters<A> {
         }
         #[cfg(not(feature = "local"))]
         {
-            use consts::canister_ids::FALLBACK_USER_INDEX;
-            use std::collections::HashSet;
-            // TODO: this is temporary
-            let blacklisted = HashSet::from([*FALLBACK_USER_INDEX]);
             let orchestrator = self.orchestrator().await;
             Ok(orchestrator
                 .get_all_available_subnet_orchestrators()
                 .await?
                 .into_iter()
-                .filter(|subnet| !blacklisted.contains(subnet))
                 .collect())
         }
     }
