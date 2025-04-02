@@ -13,6 +13,7 @@ serde_with.workspace = true
 
 reqwest = { version = "0.12.12", default-features = false, features = ["json"] }
 wasm-bindgen-futures = { version = "0.4.5", optional = true }
+utoipa = "5.3.1"
 
 [features]
 default = ["reqwest/rustls-tls"]

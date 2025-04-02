@@ -3964,6 +3964,7 @@ dependencies = [
  "serde",
  "serde_with",
  "trait-variant",
+ "utoipa",
  "wasm-bindgen-futures",
  "web-time",
 ]

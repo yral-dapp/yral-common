@@ -1,9 +1,9 @@
 use candid::Principal;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::sealed_metric::SealedMetric;
 
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TidesTurned {
     pub user_canister: Principal,
     pub staked_amount: u64,
@@ -24,5 +24,9 @@ impl SealedMetric for TidesTurned {
 
     fn user_id(&self) -> Option<String> {
         Some(self.user_canister.to_text())
+    }
+
+    fn user_canister(&self) -> Option<Principal> {
+        Some(self.user_canister)
     }
 }
