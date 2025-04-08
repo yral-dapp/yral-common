@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use candid::Principal;
-use canisters_client::individual_user_template::Result16;
+use canisters_client::individual_user_template::Result15;
 use futures_util::{
     future,
     stream::{self, FuturesOrdered, FuturesUnordered},
@@ -112,7 +112,7 @@ impl<
 
         let mut tokens_fetched = 0;
         let mut tokens: Vec<TokenListResponse> = match tokens {
-            Result16::Ok(v) => {
+            Result15::Ok(v) => {
                 tokens_fetched = v.len();
                 v.into_iter()
                     .map(|t| async move {
@@ -151,7 +151,7 @@ impl<
                     .collect::<Vec<TokenListResponse>>()
                     .await
             }
-            Result16::Err(_) => vec![],
+            Result15::Err(_) => vec![],
         };
 
         println!("{tokens_fetched}, {}, {}", end - start, tokens.len());

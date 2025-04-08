@@ -4,7 +4,7 @@ use ic_agent::AgentError;
 use crate::Canisters;
 
 use super::{CursoredDataProvider, KeyedData, PageEntry};
-use canisters_client::individual_user_template::{MintEvent, Result17, TokenEvent};
+use canisters_client::individual_user_template::{MintEvent, Result16, TokenEvent};
 
 #[derive(Clone, Copy)]
 pub struct HistoryDetails {
@@ -38,8 +38,8 @@ impl CursoredDataProvider for ReferralHistory {
             .get_user_utility_token_transaction_history_with_pagination(from as u64, end as u64)
             .await?;
         let history = match history {
-            Result17::Ok(history) => history,
-            Result17::Err(_) => {
+            Result16::Ok(history) => history,
+            Result16::Err(_) => {
                 log::warn!("failed to get posts");
                 return Ok(PageEntry {
                     data: vec![],
@@ -50,7 +50,7 @@ impl CursoredDataProvider for ReferralHistory {
         let list_end = history.len() < (end - from);
         let details = history
             .into_iter()
-            .filter_map(|(_, ev)| {
+            .filter_map(|ev| {
                 let TokenEvent::Mint {
                     timestamp,
                     details:
@@ -59,7 +59,7 @@ impl CursoredDataProvider for ReferralHistory {
                             ..
                         },
                     amount,
-                } = ev
+                } = ev.1
                 else {
                     return None;
                 };
