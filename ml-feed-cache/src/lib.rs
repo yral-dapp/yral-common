@@ -4,8 +4,8 @@ use consts::{
     MAX_GLOBAL_CACHE_LEN, MAX_SUCCESS_HISTORY_CACHE_LEN, MAX_USER_CACHE_LEN,
     MAX_WATCH_HISTORY_CACHE_LEN,
 };
-use redis::{AsyncCommands, Commands};
-use types::{MLFeedCacheHistoryItem, PostItem, get_history_item_score};
+use redis::AsyncCommands;
+use types::{get_history_item_score, MLFeedCacheHistoryItem, PostItem};
 
 pub mod consts;
 pub mod types;

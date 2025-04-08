@@ -3,7 +3,7 @@ use std::sync::Arc;
 use agent_wrapper::AgentWrapper;
 use candid::{Decode, Principal};
 use canisters_client::{
-    individual_user_template::{IndividualUserTemplate, Result24, Result8, UserCanisterDetails},
+    individual_user_template::{IndividualUserTemplate, Result27, Result8, UserCanisterDetails},
     platform_orchestrator::PlatformOrchestrator,
     post_cache::PostCache,
     sns_governance::SnsGovernance,
@@ -194,8 +194,8 @@ impl Canisters<true> {
             .await
             .map_err(|e| e.to_string())
         {
-            Ok(Result24::Ok(_)) => (),
-            Err(e) | Ok(Result24::Err(e)) => log::warn!("Failed to update last access time: {}", e),
+            Ok(Result27::Ok(_)) => (),
+            Err(e) | Ok(Result27::Err(e)) => log::warn!("Failed to update last access time: {}", e),
         }
 
         res.profile_details = Some(user.get_profile_details().await?.into());
