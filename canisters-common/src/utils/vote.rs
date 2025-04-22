@@ -1,9 +1,10 @@
-use candid::Principal;
+use candid::{CandidType, Principal};
 use canisters_client::individual_user_template::{
     BetDirection, BetOutcomeForBetMaker, BettingStatus, PlaceBetArg, PlacedBetDetail, Result3,
 };
 use serde::{Deserialize, Serialize};
 use web_time::Duration;
+use yral_identity::{ic_agent::sign_message, msg_builder::Message, Signature};
 
 use crate::{Canisters, Error, Result};
 
@@ -17,10 +18,63 @@ pub enum VoteOutcome {
     AwaitingResult,
 }
 
-#[derive(Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, CandidType)]
 pub enum VoteKind {
     Hot,
     Not,
+}
+
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, CandidType)]
+pub struct HonBetArg {
+    pub bet_amount: u64,
+    pub post_id: u64,
+    pub bet_direction: VoteKind,
+    pub post_canister_id: Principal,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct VerifiableHonBetReq {
+    pub sender: Principal,
+    pub signature: Signature,
+    pub args: HonBetArg,
+}
+
+pub fn verifiable_hon_bet_message(args: HonBetArg) -> Message {
+    Message::default()
+        .method_name("place_hon_bet_worker_req".into())
+        .args((args,))
+        .expect("Place bet request should serialize")
+}
+
+impl VerifiableHonBetReq {
+    pub fn new(sender: &impl ic_agent::Identity, args: HonBetArg) -> yral_identity::Result<Self> {
+        let msg = verifiable_hon_bet_message(args);
+        let signature = sign_message(sender, msg)?;
+
+        Ok(Self {
+            sender: sender.sender().expect("signing was succesful"),
+            args,
+            signature,
+        })
+    }
+}
+
+impl From<HonBetArg> for PlaceBetArg {
+    fn from(
+        HonBetArg {
+            bet_amount,
+            post_id,
+            bet_direction,
+            post_canister_id,
+        }: HonBetArg,
+    ) -> Self {
+        Self {
+            bet_direction: bet_direction.into(),
+            bet_amount,
+            post_id,
+            post_canister_id,
+        }
+    }
 }
 
 impl From<VoteKind> for BetDirection {
