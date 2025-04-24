@@ -72,12 +72,7 @@ type CdaoTokenError = variant {
   Transfer : TransferError;
   Unauthenticated;
 };
-type ClaimStatus = variant {
-  Unclaimed;
-  Claiming;
-  Claimed;
-  ClaimedWithTimestamp : nat64;
-};
+type ClaimStatus = variant { Unclaimed; Claiming; Claimed : opt nat64 };
 type Committed = record {
   total_direct_participation_icp_e8s : opt nat64;
   total_neurons_fund_participation_icp_e8s : opt nat64;
@@ -155,7 +150,6 @@ type IndividualUserCreatorDaoEntry = record {
   individual_profile_id : principal;
 };
 type IndividualUserTemplateInitArgs = record {
-  pump_dump_onboarding_reward : opt nat;
   known_principal_ids : opt vec record { KnownPrincipalType; principal };
   version : text;
   url_to_send_canister_metrics_to : opt text;
