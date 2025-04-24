@@ -518,7 +518,7 @@ impl<const A: bool> Canisters<A> {
                         .principals_who_successfully_claimed
                         .iter()
                         .any(|(principal, status)| {
-                            principal == &user_principal && *status == ClaimStatus::Claimed
+                            principal == &user_principal && matches!(*status, ClaimStatus::Claimed(_))
                         })
             });
         Ok(is_airdrop_claimed)
