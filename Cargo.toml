@@ -28,7 +28,7 @@ web-time = "1.0.0"
 thiserror = "2.0.3"
 log = "0.4.22"
 k256 = { version = "0.13.4", default-features = false, features = ["jwk"] }
-yral-identity = { git = "https://github.com/yral-dapp/yral-identity", rev = "adbf4be5cb62a26f2a90032261321bf1df33f08b", default-features = false, features = ["ic-agent"] }
+yral-identity = { git = "https://github.com/yral-dapp/yral-identity", rev = "adbf4be5cb62a26f2a90032261321bf1df33f08b", default-features = false }
 futures-util = "0.3.31"
 uuid = { version = "1.11.0", features = ["serde"] }
 serde_with = "3.6.0"
