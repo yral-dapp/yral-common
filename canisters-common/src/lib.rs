@@ -3,7 +3,7 @@ use std::sync::Arc;
 use agent_wrapper::AgentWrapper;
 use candid::{Decode, Principal};
 use canisters_client::{
-    individual_user_template::{IndividualUserTemplate, Result22, Result8, UserCanisterDetails},
+    individual_user_template::{IndividualUserTemplate, Result22, Result4, UserCanisterDetails},
     platform_orchestrator::PlatformOrchestrator,
     post_cache::PostCache,
     sns_governance::SnsGovernance,
@@ -78,7 +78,7 @@ impl Canisters<true> {
         self.individual_user(self.user_canister).await
     }
 
-    pub async fn deploy_cdao_sns(&self, init_payload: SnsInitPayload) -> Result<Result8> {
+    pub async fn deploy_cdao_sns(&self, init_payload: SnsInitPayload) -> Result<Result4> {
         let agent = self.agent.get_agent().await;
         let args = candid::encode_args((init_payload, CDAO_SWAP_TIME_SECS)).unwrap();
         let bytes = agent
@@ -86,7 +86,7 @@ impl Canisters<true> {
             .with_arg(args)
             .call_and_wait()
             .await?;
-        Ok(Decode!(&bytes, Result8)?)
+        Ok(Decode!(&bytes, Result4)?)
     }
 
     pub fn profile_details(&self) -> ProfileDetails {
