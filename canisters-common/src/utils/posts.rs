@@ -1,3 +1,5 @@
+use std::{cmp::Ordering, hash::{Hash, Hasher}};
+
 use candid::Principal;
 use canisters_client::individual_user_template::{PostDetailsForFrontend, PostStatus};
 use serde::{Deserialize, Serialize};
@@ -7,7 +9,7 @@ use crate::{Canisters, Result};
 
 use super::profile::propic_from_principal;
 
-#[derive(Clone, PartialEq, Ord, PartialOrd, Debug, Hash, Eq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, PartialOrd, Debug, Serialize, Deserialize)]
 pub struct PostDetails {
     pub canister_id: Principal, // canister id of the publishing canister.
     pub post_id: u64,
@@ -25,13 +27,39 @@ pub struct PostDetails {
     pub is_nsfw: bool,
     pub hot_or_not_feed_ranking_score: Option<u64>,
     pub created_at: Duration,
+    pub nsfw_probability: f32,
 }
 
+impl Ord for PostDetails {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.created_at.cmp(&other.created_at)
+    }
+}
+
+impl Hash for PostDetails {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.canister_id.hash(state);
+        self.post_id.hash(state);
+    }
+}
+
+impl Eq for PostDetails {}
+
 impl PostDetails {
+
     pub fn from_canister_post(
         authenticated: bool,
         canister_id: Principal,
         details: PostDetailsForFrontend,
+    ) -> Self {
+        Self::from_canister_post_with_nsfw_info(authenticated, canister_id, details, 0.0)
+    }
+
+    pub fn from_canister_post_with_nsfw_info(
+        authenticated: bool,
+        canister_id: Principal,
+        details: PostDetailsForFrontend,
+        nsfw_probability: f32,
     ) -> Self {
         Self {
             canister_id,
@@ -50,12 +78,13 @@ impl PostDetails {
             liked_by_user: authenticated.then_some(details.liked_by_me),
             poster_principal: details.created_by_user_principal_id,
             hastags: details.hashtags,
-            is_nsfw: details.is_nsfw,
+            is_nsfw: nsfw_probability > 0.5,
             hot_or_not_feed_ranking_score: details.hot_or_not_feed_ranking_score,
             created_at: Duration::new(
                 details.created_at.secs_since_epoch,
                 details.created_at.nanos_since_epoch,
             ),
+            nsfw_probability,
         }
     }
 
@@ -69,6 +98,16 @@ impl<const A: bool> Canisters<A> {
         &self,
         user_canister: Principal,
         post_id: u64,
+    ) -> Result<Option<PostDetails>> {
+        self.get_post_details_with_nsfw_info(user_canister, post_id, 0.0)
+            .await
+    }
+
+    pub async fn get_post_details_with_nsfw_info(
+        &self,
+        user_canister: Principal,
+        post_id: u64,
+        nsfw_probability: f32,
     ) -> Result<Option<PostDetails>> {
         let post_creator_can = self.individual_user(user_canister).await;
         let post_details = match post_creator_can
@@ -102,10 +141,11 @@ impl<const A: bool> Canisters<A> {
             return Ok(None);
         }
 
-        Ok(Some(PostDetails::from_canister_post(
+        Ok(Some(PostDetails::from_canister_post_with_nsfw_info(
             A,
             user_canister,
             post_details,
+            nsfw_probability
         )))
     }
 }

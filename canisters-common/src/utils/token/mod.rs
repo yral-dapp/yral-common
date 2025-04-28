@@ -1,10 +1,10 @@
-use canisters_client::sns_swap::{GetInitArg, GetLifecycleArg};
+use canisters_client::sns_swap::GetInitArg;
 use pump_n_dump_common::{rest::BalanceInfoResponse, WithdrawalState};
 use std::{fmt::Display, str::FromStr};
 
 use balance::{TokenBalance, TokenBalanceOrClaiming};
 use candid::{Nat, Principal};
-use grpc_traits::{AirdropConfigProvider, TokenInfoProvider};
+use grpc_traits::TokenInfoProvider;
 use ic_agent::export::PrincipalError;
 
 use crate::{
@@ -43,7 +43,6 @@ pub struct TokenMetadata {
     pub is_nsfw: bool,
     #[serde(default)]
     pub token_owner: Option<TokenOwner>,
-    pub timestamp: Option<i64>,
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Hash, Eq, Debug)]
@@ -143,7 +142,6 @@ impl<const A: bool> Canisters<A> {
                     decimals: 8,
                     is_nsfw: false,
                     token_owner: None,
-                    timestamp: None,
                 }))
             }
             RootType::CENTS => {
@@ -183,7 +181,6 @@ impl<const A: bool> Canisters<A> {
                     decimals: 8,
                     is_nsfw: false,
                     token_owner: None,
-                    timestamp: None,
                 }))
             }
             RootType::Other(root) => {
@@ -210,9 +207,6 @@ impl<const A: bool> Canisters<A> {
         let Some(index) = sns_cans.index else {
             return Ok(None);
         };
-        let Some(swap) = sns_cans.swap else {
-            return Ok(None);
-        };
 
         let metadata = self
             .get_token_metadata(
@@ -221,7 +215,6 @@ impl<const A: bool> Canisters<A> {
                 token_root,
                 governance,
                 ledger,
-                swap,
                 index,
             )
             .await?;
@@ -236,7 +229,6 @@ impl<const A: bool> Canisters<A> {
         token_root: Principal,
         governance: Principal,
         ledger: Principal,
-        swap: Principal,
         index: Principal,
     ) -> Result<TokenMetadata> {
         let governance_can = self.sns_governance(governance).await;
@@ -245,20 +237,14 @@ impl<const A: bool> Canisters<A> {
         let ledger_can = self.sns_ledger(ledger).await;
         let symbol = ledger_can.icrc_1_symbol().await?;
 
-        let swap_can = self.sns_swap(swap).await;
-
-        let timestamp = swap_can
-            .get_lifecycle(GetLifecycleArg {})
-            .await?
-            .decentralization_sale_open_timestamp_seconds
-            .unwrap_or(0) as i64;
-
         let fees = ledger_can.icrc_1_fee().await?;
         let decimals = ledger_can.icrc_1_decimals().await?;
 
-        let token = nsfw_detector.get_token_by_id(token_root.to_string()).await;
-
-        let is_nsfw = token.map(|token| token.is_nsfw).unwrap_or(false);
+        let is_nsfw = nsfw_detector
+            .get_token_by_id(token_root.to_string())
+            .await
+            .map(|token_info| token_info.is_nsfw)
+            .unwrap_or(false);
 
         let token_owner = self.get_token_owner(token_root).await?;
 
@@ -276,7 +262,6 @@ impl<const A: bool> Canisters<A> {
             decimals,
             is_nsfw,
             token_owner,
-            timestamp: Some(timestamp),
         };
 
         if let Some(user_principal) = user_principal {
@@ -427,7 +412,6 @@ impl<const A: bool> Canisters<A> {
             decimals,
             is_nsfw: false,
             token_owner: None,
-            timestamp: None,
         };
         let Some(user_principal) = user_principal else {
             return Ok(Some(res));
@@ -521,67 +505,22 @@ impl<const A: bool> Canisters<A> {
         token_owner: Principal,
         token_root: Principal,
         user_principal: Principal,
-        created_at: Option<i64>,
-        config_provider: &impl AirdropConfigProvider,
     ) -> Result<bool> {
-        let Some(created_at) = created_at else {
-            return Ok(true);
-        };
-
-        let config = config_provider.get_airdrop_config().await;
-        let cycle_duration = config.cycle_duration;
-        let claim_limit = config.claim_limit;
-
-        println!("cycle duration is {}", cycle_duration);
-
         let token_owner = self.individual_user(token_owner).await;
-        let canisters = token_owner.deployed_cdao_canisters().await?;
-
-        let now = web_time::SystemTime::now()
-            .duration_since(web_time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
-        let cycle_num = (now - (created_at as u64)) / cycle_duration;
-        let cycle_start = (created_at as u64) + (cycle_num * cycle_duration);
-
-        println!("cycle num is {}", cycle_num);
-        println!("cycle start is {}", cycle_start);
-
-        let is_airdrop_claimed = canisters.into_iter().any(|token| {
-            if token.root == token_root {
-                let principals = token.airdrop_info.principals_who_successfully_claimed;
-
-                let num_claims = principals
-                    .iter()
-                    .filter(|(_, claim)| match claim {
-                        ClaimStatus::ClaimedWithTimestamp(_) => true,
-                        _ => false,
-                    })
-                    .count();
-
-                println!("num claims is {}", num_claims);
-
-                if num_claims >= claim_limit {
-                    return true;
-                }
-
-                return principals.iter().any(|(principal, status)| {
-                    if principal == &user_principal {
-                        return match status {
-                            ClaimStatus::ClaimedWithTimestamp(claim_time) => {
-                                (*claim_time / 1000) > cycle_start
-                            }
-                            _ => false,
-                        };
-                    }
-
-                    return false;
-                });
-            }
-
-            return false;
-        });
-
+        let is_airdrop_claimed = token_owner
+            .deployed_cdao_canisters()
+            .await?
+            .into_iter()
+            .any(|token| {
+                token.root == token_root
+                    && token
+                        .airdrop_info
+                        .principals_who_successfully_claimed
+                        .iter()
+                        .any(|(principal, status)| {
+                            principal == &user_principal && matches!(*status, ClaimStatus::Claimed)
+                        })
+            });
         Ok(is_airdrop_claimed)
     }
 
