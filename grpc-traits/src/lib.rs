@@ -25,13 +25,3 @@ pub trait TokenInfoProvider {
         token_id: String,
     ) -> impl Future<Output = Result<TokenListItemFS, Self::Error>> + Send;
 }
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct AirdropConfig {
-    pub cycle_duration: u64,
-    pub claim_limit: usize,
-}
-
-pub trait AirdropConfigProvider {
-    fn get_airdrop_config(&self) -> impl Future<Output = AirdropConfig> + Send;
-}
