@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use web_time::Duration;
 use yral_identity::{ic_agent::sign_message, msg_builder::Message, Signature};
 
-use crate::{Canisters, Error, Result};
+use crate::{consts::CENTS_IN_E6S, Canisters, Error, Result};
 
 use super::time::current_epoch;
 
@@ -177,6 +177,67 @@ impl Canisters<true> {
                 )));
             }
         };
+
+        Ok(betting_status)
+    }
+
+    pub async fn vote_with_cents_on_post(
+        &self,
+        vote_amount: u64,
+        vote_direction: VoteKind,
+        post_id: u64,
+        post_canister_id: Principal,
+    ) -> Result<BettingStatus> {
+        let user = self.authenticated_user().await;
+
+        let place_bet_arg = PlaceBetArg {
+            bet_amount: vote_amount * CENTS_IN_E6S,
+            post_id,
+            bet_direction: vote_direction.into(),
+            post_canister_id,
+        };
+
+        let res = user
+            .bet_on_currently_viewing_post_v_1(place_bet_arg)
+            .await?;
+
+        let betting_status = match res {
+            Result3::Ok(p) => p,
+            Result3::Err(e) => {
+                // todo send event that betting failed
+                return Err(Error::YralCanister(format!(
+                    "bet_on_currently_viewing_post_v_1 error {e:?}"
+                )));
+            }
+        };
+
+        Ok(betting_status)
+    }
+
+    /// Places a vote on a post via cloudflare. The vote amount must be in cents e0s
+    pub async fn vote_with_cents_on_post_via_cloudflare(
+        &self,
+        cloudflare_url: reqwest::Url,
+        vote_amount: u64,
+        bet_direction: VoteKind,
+        post_id: u64,
+        post_canister_id: Principal,
+    ) -> Result<BettingStatus> {
+        let req = VerifiableHonBetReq::new(
+            self.identity(),
+            HonBetArg {
+                bet_amount: vote_amount * CENTS_IN_E6S,
+                post_id,
+                bet_direction,
+                post_canister_id,
+            },
+        )?;
+
+        let url = cloudflare_url.join("/place_hot_or_not_bet")?;
+
+        let client = reqwest::Client::new();
+        let betting_status: BettingStatus =
+            client.post(url).json(&req).send().await?.json().await?;
 
         Ok(betting_status)
     }
