@@ -23,6 +23,8 @@ pub enum Error {
     YralCanister(String),
     #[error("invalid identity: {0}")]
     Identity(#[from] k256::elliptic_curve::Error),
+    #[error("identity error: {0}")]
+    YralIdentity(#[from] yral_identity::Error),
     #[error("failed to get transactions: {0}")]
     GetTransactions(String),
     #[error("failed to parse transaction")]
@@ -33,6 +35,10 @@ pub enum Error {
     CborDe(#[from] ciborium::de::Error<io::Error>),
     #[error("{0}")]
     PndError(#[from] PndError),
+    #[error("{0}")]
+    Url(#[from] url::ParseError),
+    #[error("network error: {0}")]
+    Network(#[from] reqwest::Error),
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

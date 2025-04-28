@@ -40,7 +40,7 @@ impl CursoredDataProvider for VotesProvider {
         let user = self.canisters.individual_user(self.user).await;
         assert_eq!(end - start, 10);
         let bets = user
-            .get_hot_or_not_bets_placed_by_this_profile_with_pagination(start as u64)
+            .get_hot_or_not_bets_placed_by_this_profile_with_pagination_v_1(start as u64)
             .await?;
         let list_end = bets.len() < (end - start);
         Ok(PageEntry {
