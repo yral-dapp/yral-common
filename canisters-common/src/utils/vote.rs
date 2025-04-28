@@ -160,6 +160,37 @@ impl Canisters<true> {
         let user = self.authenticated_user().await;
 
         let place_bet_arg = PlaceBetArg {
+            bet_amount: vote_amount,
+            post_id,
+            bet_direction: vote_direction.into(),
+            post_canister_id,
+        };
+
+        let res = user.bet_on_currently_viewing_post(place_bet_arg).await?;
+
+        let betting_status = match res {
+            Result3::Ok(p) => p,
+            Result3::Err(e) => {
+                // todo send event that betting failed
+                return Err(Error::YralCanister(format!(
+                    "bet_on_currently_viewing_post error {e:?}"
+                )));
+            }
+        };
+
+        Ok(betting_status)
+    }
+
+    pub async fn vote_with_cents_on_post(
+        &self,
+        vote_amount: u64,
+        vote_direction: VoteKind,
+        post_id: u64,
+        post_canister_id: Principal,
+    ) -> Result<BettingStatus> {
+        let user = self.authenticated_user().await;
+
+        let place_bet_arg = PlaceBetArg {
             bet_amount: vote_amount * CENTS_IN_E6S,
             post_id,
             bet_direction: vote_direction.into(),
@@ -184,7 +215,7 @@ impl Canisters<true> {
     }
 
     /// Places a vote on a post via cloudflare. The vote amount must be in cents e0s
-    pub async fn vote_on_post_via_cloudflare(
+    pub async fn vote_with_cents_on_post_via_cloudflare(
         &self,
         cloudflare_url: reqwest::Url,
         vote_amount: u64,
