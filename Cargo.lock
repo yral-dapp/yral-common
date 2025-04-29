@@ -4015,6 +4015,7 @@ dependencies = [
  "rust_decimal",
  "send_wrapper",
  "serde",
+ "serde_json",
  "sns-validation",
  "thiserror 2.0.12",
  "url",
