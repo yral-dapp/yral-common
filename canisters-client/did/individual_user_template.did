@@ -175,10 +175,12 @@ type KnownPrincipalType = variant {
   CanisterIdRootCanister;
   CanisterIdDataBackup;
   CanisterIdSnsLedger;
+  CanisterIdCkBTCLedger;
   CanisterIdSnsWasm;
   CanisterIdPostCache;
   CanisterIdSNSController;
   CanisterIdSnsGovernance;
+  UserIdCkBTCTreasury;
   UserIdGlobalSuperAdmin;
 };
 type LinearScalingCoefficient = record {
@@ -558,6 +560,7 @@ service : (IndividualUserTemplateInitArgs) -> {
   add_token : (principal) -> (Result_2);
   bet_on_currently_viewing_post : (PlaceBetArg) -> (Result_3);
   bet_on_currently_viewing_post_v1 : (PlaceBetArg) -> (Result_3);
+  cents_token_balance_info : () -> (BalanceInfo) query;
   clear_snapshot : () -> ();
   delete_all_creator_token : () -> ();
   delete_post : (nat64) -> (Result);
@@ -634,6 +637,7 @@ service : (IndividualUserTemplateInitArgs) -> {
   receive_data_from_hotornot : (principal, nat64, vec Post) -> (Result_16);
   reconcile_user_state : (vec PumpNDumpStateDiff) -> (Result);
   redeem_gdollr : (nat) -> (Result);
+  redeem_satoshis : (nat) -> (Result);
   request_airdrop : (principal, opt blob, nat, principal) -> (Result_17);
   return_cycles_to_user_index_canister : (opt nat) -> ();
   save_snapshot_json : () -> (nat32);
@@ -642,7 +646,7 @@ service : (IndividualUserTemplateInitArgs) -> {
   settle_neurons_fund_participation : (
       SettleNeuronsFundParticipationRequest,
     ) -> (SettleNeuronsFundParticipationResponse);
-  stake_dollr_for_gdollr : (nat) -> (Result);
+  stake_sats_for_cents : (nat) -> (Result);
   transfer_token_to_user_canister : (principal, principal, opt blob, nat) -> (
       Result_21,
     );
