@@ -3,6 +3,12 @@ use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use yral_identity::Signature;
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct SatsBalanceInfo {
+    pub balance: BigUint,
+    pub airdropped: BigUint,
+}
+
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Debug, CandidType)]
 pub enum HotOrNot {
     Hot,
@@ -77,14 +83,14 @@ pub fn hon_game_vote_msg(request: VoteRequest) -> yral_identity::msg_builder::Me
 
 impl HoNGameVoteReq {
     #[cfg(feature = "client")]
-    pub fn new(sender: &impl ic_agent::Identity, request: VoteRequest) -> yral_identity::Result<Self> {
+    pub fn new(
+        sender: &impl ic_agent::Identity,
+        request: VoteRequest,
+    ) -> yral_identity::Result<Self> {
         use yral_identity::ic_agent::sign_message;
         let msg = hon_game_vote_msg(request.clone());
         let signature = sign_message(sender, msg)?;
 
-        Ok(Self {
-            request,
-            signature,
-        })
+        Ok(Self { request, signature })
     }
 }
