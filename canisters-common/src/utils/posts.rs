@@ -1,4 +1,7 @@
-use std::{cmp::Ordering, hash::{Hash, Hasher}};
+use std::{
+    cmp::Ordering,
+    hash::{Hash, Hasher},
+};
 
 use candid::Principal;
 use canisters_client::individual_user_template::{PostDetailsForFrontend, PostStatus};
@@ -46,7 +49,6 @@ impl Hash for PostDetails {
 impl Eq for PostDetails {}
 
 impl PostDetails {
-
     pub fn from_canister_post(
         authenticated: bool,
         canister_id: Principal,
@@ -145,7 +147,7 @@ impl<const A: bool> Canisters<A> {
             A,
             user_canister,
             post_details,
-            nsfw_probability
+            nsfw_probability,
         )))
     }
 }

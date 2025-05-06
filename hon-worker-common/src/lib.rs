@@ -1,7 +1,12 @@
 use candid::{CandidType, Principal};
 use num_bigint::BigUint;
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
+use url::Url;
 use yral_identity::Signature;
+
+pub static WORKER_URL: Lazy<Url> =
+    Lazy::new(|| Url::parse("http://localhost:8080").expect("url to be appropriate"));
 
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Debug, CandidType)]
 pub enum HotOrNot {
@@ -77,14 +82,14 @@ pub fn hon_game_vote_msg(request: VoteRequest) -> yral_identity::msg_builder::Me
 
 impl HoNGameVoteReq {
     #[cfg(feature = "client")]
-    pub fn new(sender: &impl ic_agent::Identity, request: VoteRequest) -> yral_identity::Result<Self> {
+    pub fn new(
+        sender: &impl ic_agent::Identity,
+        request: VoteRequest,
+    ) -> yral_identity::Result<Self> {
         use yral_identity::ic_agent::sign_message;
         let msg = hon_game_vote_msg(request.clone());
         let signature = sign_message(sender, msg)?;
 
-        Ok(Self {
-            request,
-            signature,
-        })
+        Ok(Self { request, signature })
     }
 }
