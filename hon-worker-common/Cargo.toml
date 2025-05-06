@@ -9,6 +9,7 @@ serde.workspace = true
 yral-identity = { workspace = true, default-features = false }
 ic-agent = { workspace = true, optional = true }
 num-bigint.workspace = true
+thiserror.workspace = true
 
 [features]
 client = ["yral-identity/ic-agent", "dep:ic-agent"]

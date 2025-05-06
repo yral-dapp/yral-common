@@ -1097,6 +1097,7 @@ dependencies = [
  "ic-agent",
  "num-bigint",
  "serde",
+ "thiserror 2.0.12",
  "yral-identity 0.1.0 (git+https://github.com/yral-dapp/yral-identity?rev=adbf4be5cb62a26f2a90032261321bf1df33f08b)",
 ]
 

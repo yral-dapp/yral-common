@@ -1,7 +1,13 @@
+mod error;
+
+pub use error::*;
+
 use candid::{CandidType, Principal};
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use yral_identity::Signature;
+
+pub type WorkerResponse<T> = Result<T, WorkerError>;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SatsBalanceInfo {
