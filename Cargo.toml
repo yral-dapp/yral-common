@@ -21,6 +21,7 @@ ic-agent = { version = "0.38.1", default-features = false }
 types = { package = "yral-types", path = "types" }
 canisters-client = { package = "yral-canisters-client", path = "canisters-client" }
 pump-n-dump-common = { package = "yral-pump-n-dump-common", path = "pump-n-dump-common" }
+hon-worker-common = { package = "hon-worker-common", path = "hon-worker-common" }
 grpc-traits = { package = "yral-grpc-traits", path = "grpc-traits" }
 candid = "0.10.10"
 url = "2.5.4"

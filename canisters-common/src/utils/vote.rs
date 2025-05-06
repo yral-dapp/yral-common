@@ -2,6 +2,7 @@ use candid::{CandidType, Principal};
 use canisters_client::individual_user_template::{
     BetDirection, BetOutcomeForBetMaker, BettingStatus, PlaceBetArg, PlacedBetDetail, Result3,
 };
+use hon_worker_common::{HoNGameVoteReq, VoteRes};
 use serde::{Deserialize, Serialize};
 use web_time::Duration;
 use yral_identity::{ic_agent::sign_message, msg_builder::Message, Signature};
@@ -149,6 +150,12 @@ impl From<PlacedBetDetail> for VoteDetails {
     }
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum VotingError {
+    #[error("error: {0}")]
+    Generic(String),
+}
+
 impl Canisters<true> {
     pub async fn vote_on_post(
         &self,
@@ -240,5 +247,29 @@ impl Canisters<true> {
             client.post(url).json(&req).send().await?.json().await?;
 
         Ok(betting_status)
+    }
+
+    /// Places a vote on a post with satoshis via cloudflare
+    pub async fn vote_with_sats_on_post_via_cloudflare(
+        &self,
+        cloudflare_url: reqwest::Url,
+        request: hon_worker_common::VoteRequest,
+    ) -> Result<Result<VoteRes, VotingError>> {
+        let signed_req = HoNGameVoteReq::new(self.identity(), request)?;
+
+        let path = format!("/vote/{}", self.user_principal());
+        let url = cloudflare_url.join(&path)?;
+
+        let client = reqwest::Client::new();
+        let res = client.post(url).json(&signed_req).send().await?;
+
+        if !res.status().is_success() {
+            let err = res.text().await?;
+            return Ok(Err(VotingError::Generic(err)));
+        }
+
+        let vote_res: VoteRes = res.json().await?;
+
+        Ok(Ok(vote_res))
     }
 }
