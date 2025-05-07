@@ -150,12 +150,6 @@ impl From<PlacedBetDetail> for VoteDetails {
     }
 }
 
-#[derive(thiserror::Error, Debug)]
-pub enum VotingError {
-    #[error("error: {0}")]
-    Generic(String),
-}
-
 impl Canisters<true> {
     pub async fn vote_on_post(
         &self,
@@ -254,7 +248,8 @@ impl Canisters<true> {
         &self,
         cloudflare_url: reqwest::Url,
         request: hon_worker_common::VoteRequest,
-    ) -> Result<Result<VoteRes, VotingError>> {
+    ) -> Result<Result<VoteRes, hon_worker_common::WorkerError>> {
+        use hon_worker_common::WorkerError;
         let signed_req = HoNGameVoteReq::new(self.identity(), request)?;
 
         let path = format!("/vote/{}", self.user_principal());
@@ -264,8 +259,8 @@ impl Canisters<true> {
         let res = client.post(url).json(&signed_req).send().await?;
 
         if !res.status().is_success() {
-            let err = res.text().await?;
-            return Ok(Err(VotingError::Generic(err)));
+            let err: WorkerError = res.json().await?;
+            return Ok(Err(err));
         }
 
         let vote_res: VoteRes = res.json().await?;
