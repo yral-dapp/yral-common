@@ -33,6 +33,8 @@ pub mod utils;
 pub use error::*;
 use yral_metadata_types::UserMetadata;
 pub const CENT_TOKEN_NAME: &str = "CENTS";
+pub const SATS_TOKEN_NAME: &str = "Satoshi";
+pub const SATS_TOKEN_SYMBOL: &str = "SATS";
 
 #[derive(Clone)]
 pub struct Canisters<const AUTH: bool> {
