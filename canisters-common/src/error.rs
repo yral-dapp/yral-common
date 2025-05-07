@@ -13,10 +13,10 @@ pub enum PndError {
 
 #[derive(Debug, Error)]
 pub enum HonError {
-    #[error("worker didn't return a number: {0}")]
-    Parse(<Nat as FromStr>::Err),
     #[error("network error when accessing worker: {0}")]
     Network(#[from] reqwest::Error),
+    #[error("error accessing game backend: {0}")]
+    Backend(String),
 }
 
 #[derive(Debug, Error)]

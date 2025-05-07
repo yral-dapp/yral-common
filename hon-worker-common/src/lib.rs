@@ -75,6 +75,15 @@ pub struct GameInfoReq {
     pub post_id: u64,
 }
 
+impl From<(Principal, u64)> for GameInfoReq {
+    fn from((post_canister, post_id): (Principal, u64)) -> Self {
+        Self {
+            post_canister,
+            post_id,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HoNGameVoteReq {
     pub request: VoteRequest,
