@@ -4,13 +4,10 @@ pub use error::*;
 
 use candid::{CandidType, Principal};
 use num_bigint::BigUint;
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use url::Url;
 use yral_identity::Signature;
 
-pub static WORKER_URL: Lazy<Url> =
-    Lazy::new(|| Url::parse("http://localhost:8080").expect("url to be appropriate"));
+pub const WORKER_URL: &str = "http://localhost:8080";
 pub type WorkerResponse<T> = Result<T, WorkerError>;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

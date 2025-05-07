@@ -2,6 +2,7 @@ use canisters_client::sns_swap::GetInitArg;
 use hon_worker_common::SatsBalanceInfo;
 use pump_n_dump_common::{rest::BalanceInfoResponse, WithdrawalState};
 use std::{fmt::Display, str::FromStr};
+use url::Url;
 
 use balance::{TokenBalance, TokenBalanceOrClaiming};
 use candid::{Nat, Principal};
@@ -104,7 +105,8 @@ async fn load_cents_balance(
 async fn load_sats_balance(
     user_principal: Principal,
 ) -> std::result::Result<SatsBalanceInfo, PndError> {
-    let balance_url = hon_worker_common::WORKER_URL
+    let url: Url = hon_worker_common::WORKER_URL.parse().unwrap();
+    let balance_url = url
         .join(&format!("/balance/{user_principal}"))
         .expect("Url to be valid");
 

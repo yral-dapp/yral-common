@@ -10,7 +10,6 @@ serde.workspace = true
 yral-identity = { workspace = true, default-features = false }
 ic-agent = { workspace = true, optional = true }
 num-bigint.workspace = true
-once_cell = "1.21.3"
 url.workspace = true
 thiserror.workspace = true
 

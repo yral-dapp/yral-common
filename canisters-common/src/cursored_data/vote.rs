@@ -3,6 +3,7 @@ use std::sync::Mutex;
 use candid::Principal;
 use canisters_client::individual_user_template::PlacedBetDetail;
 use hon_worker_common::{GameRes, PaginatedGamesReq, PaginatedGamesRes, WORKER_URL};
+use url::Url;
 
 use crate::{utils::vote::VoteDetails, Canisters, Error};
 
@@ -130,8 +131,12 @@ impl CursoredDataProvider for VotesWithSatsProvider {
         start: usize,
         end: usize,
     ) -> Result<PageEntry<Self::Data>, Self::Error> {
+        // TODO make lazy static.
+        // i tried earlier, but there was some wasm related error?
+        // give it another shot in isloation
+        let url: Url = WORKER_URL.parse().unwrap();
         let path = format!("/games/{}", self.user_principal);
-        let url = WORKER_URL.join(&path).unwrap();
+        let url = url.join(&path).unwrap();
         let cursor = self.get_cursor();
         let req = PaginatedGamesReq {
             page_size: end - start,
@@ -140,7 +145,7 @@ impl CursoredDataProvider for VotesWithSatsProvider {
 
         let client = reqwest::Client::new();
         let PaginatedGamesRes { games, next }: PaginatedGamesRes =
-            client.get(url).json(&req).send().await?.json().await?;
+            client.post(url).json(&req).send().await?.json().await?;
 
         let end = next.is_none();
 
