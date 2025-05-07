@@ -1,3 +1,7 @@
+mod error;
+
+pub use error::*;
+
 use candid::{CandidType, Principal};
 use num_bigint::BigUint;
 use once_cell::sync::Lazy;
@@ -7,6 +11,13 @@ use yral_identity::Signature;
 
 pub static WORKER_URL: Lazy<Url> =
     Lazy::new(|| Url::parse("http://localhost:8080").expect("url to be appropriate"));
+pub type WorkerResponse<T> = Result<T, WorkerError>;
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct SatsBalanceInfo {
+    pub balance: BigUint,
+    pub airdropped: BigUint,
+}
 
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Debug, CandidType)]
 pub enum HotOrNot {
