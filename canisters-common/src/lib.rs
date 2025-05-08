@@ -11,7 +11,7 @@ use canisters_client::{
     sns_ledger::SnsLedger,
     sns_root::SnsRoot,
     sns_swap::SnsSwap,
-    user_index::{Result1, UserIndex},
+    user_index::{Result_, UserIndex},
 };
 use consts::{
     canister_ids::{PLATFORM_ORCHESTRATOR_ID, POST_CACHE_ID},
@@ -117,8 +117,8 @@ impl Canisters<true> {
             .get_requester_principals_canister_id_create_if_not_exists()
             .await?
         {
-            Result1::Ok(val) => Ok(val),
-            Result1::Err(e) => Err(Error::YralCanister(e)),
+            Result_::Ok(val) => Ok(val),
+            Result_::Err(e) => Err(Error::YralCanister(e)),
         }?;
 
         self.metadata_client
