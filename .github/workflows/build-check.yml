@@ -1,0 +1,21 @@
+name: Build check 
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+
+jobs:
+  build_check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo and submodules
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Cache rust dependencies and build output
+        uses: Swatinem/rust-cache@v2 
+
+      - name: compile check
+        run: |
+          cargo check --all-features
