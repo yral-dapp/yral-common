@@ -87,6 +87,8 @@ impl From<(Principal, u64)> for GameInfoReq {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HoNGameVoteReq {
     pub request: VoteRequest,
+    /// Sentiment from alloydb
+    pub fetched_sentiment: HotOrNot,
     pub signature: Signature,
 }
 
@@ -97,16 +99,9 @@ pub fn hon_game_vote_msg(request: VoteRequest) -> yral_identity::msg_builder::Me
         .expect("Vote request should serialize")
 }
 
-impl HoNGameVoteReq {
-    #[cfg(feature = "client")]
-    pub fn new(
-        sender: &impl ic_agent::Identity,
-        request: VoteRequest,
-    ) -> yral_identity::Result<Self> {
-        use yral_identity::ic_agent::sign_message;
-        let msg = hon_game_vote_msg(request.clone());
-        let signature = sign_message(sender, msg)?;
-
-        Ok(Self { request, signature })
-    }
+#[cfg(feature = "client")]
+pub fn sign_vote_request(sender: &impl ic_agent::Identity, request: VoteRequest) -> yral_identity::Result<Signature> {
+    use yral_identity::ic_agent::sign_message;
+    let msg = hon_game_vote_msg(request.clone());
+    sign_message(sender, msg)
 }

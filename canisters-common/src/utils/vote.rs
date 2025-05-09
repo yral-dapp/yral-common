@@ -252,30 +252,6 @@ impl Canisters<true> {
         Ok(betting_status)
     }
 
-    /// Places a vote on a post with satoshis via cloudflare
-    pub async fn vote_with_sats_on_post_via_cloudflare(
-        &self,
-        cloudflare_url: reqwest::Url,
-        request: hon_worker_common::VoteRequest,
-    ) -> Result<Result<VoteRes, WorkerError>> {
-        let signed_req = HoNGameVoteReq::new(self.identity(), request)?;
-
-        let path = format!("/vote/{}", self.user_principal());
-        let url = cloudflare_url.join(&path)?;
-
-        let client = reqwest::Client::new();
-        let res = client.post(url).json(&signed_req).send().await?;
-
-        if !res.status().is_success() {
-            let err: WorkerError = res.json().await?;
-            return Ok(Err(err));
-        }
-
-        let vote_res: VoteRes = res.json().await?;
-
-        Ok(Ok(vote_res))
-    }
-
     pub async fn fetch_game_with_sats_info(
         &self,
         cloudflare_url: reqwest::Url,
