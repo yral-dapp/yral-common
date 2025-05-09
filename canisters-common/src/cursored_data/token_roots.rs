@@ -153,8 +153,8 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
         if start == 0 {
             let mut rep = stream::iter(
                 [
-                    RootType::COYNS,
                     RootType::CENTS,
+                    RootType::COYNS,
                     RootType::from_str("btc").unwrap(),
                     RootType::from_str("usdc").unwrap(),
                 ]
