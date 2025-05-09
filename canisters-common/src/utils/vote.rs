@@ -1,6 +1,7 @@
 use candid::{CandidType, Principal};
 use canisters_client::individual_user_template::{
-    BetDirection, BetOutcomeForBetMaker, BettingStatus, PlaceBetArg, PlacedBetDetail, Result3,
+    BetDirection, BetOnCurrentlyViewingPostError, BetOutcomeForBetMaker, BettingStatus,
+    PlaceBetArg, PlacedBetDetail, Result3,
 };
 use serde::{Deserialize, Serialize};
 use web_time::Duration;
@@ -236,8 +237,15 @@ impl Canisters<true> {
         let url = cloudflare_url.join("/place_hot_or_not_bet")?;
 
         let client = reqwest::Client::new();
-        let betting_status: BettingStatus =
-            client.post(url).json(&req).send().await?.json().await?;
+        let res = client.post(url).json(&req).send().await?;
+        if res.status().is_client_error() {
+            let err: BetOnCurrentlyViewingPostError = res.json().await?;
+            return Err(Error::YralCanister(format!(
+                "bet_on_currently_viewing_post_v_1 error {err:?}"
+            )));
+        }
+
+        let betting_status: BettingStatus = res.json().await?;
 
         Ok(betting_status)
     }
