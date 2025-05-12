@@ -62,6 +62,27 @@ impl Hash for PostItem {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, ToSchema, Debug, ToRedisArgs, FromRedisValue)]
+pub struct PlainPostItem {
+    pub canister_id: String,
+    pub post_id: u64,
+}
+
+impl Eq for PlainPostItem {}
+
+impl PartialEq for PlainPostItem {
+    fn eq(&self, other: &Self) -> bool {
+        self.canister_id == other.canister_id && self.post_id == other.post_id
+    }
+}
+
+impl Hash for PlainPostItem {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.canister_id.hash(state);
+        self.post_id.hash(state);
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, ToSchema, Debug)]
 pub struct FeedRequest {
     pub canister_id: String,
@@ -72,4 +93,15 @@ pub struct FeedRequest {
 #[derive(Serialize, Deserialize, Clone, ToSchema, Debug)]
 pub struct FeedResponse {
     pub posts: Vec<PostItem>,
+}
+
+#[derive(Serialize, Deserialize, Clone, ToRedisArgs, FromRedisValue, Debug)]
+pub struct BufferItem {
+    pub publisher_canister_id: String,
+    pub post_id: u64,
+    pub video_id: String,
+    pub item_type: String,
+    pub percent_watched: f32,
+    pub user_canister_id: String,
+    pub timestamp: SystemTime,
 }
