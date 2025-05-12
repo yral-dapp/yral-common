@@ -344,6 +344,28 @@ impl MLFeedCacheState {
 
         Ok(items)
     }
+
+    pub async fn remove_user_buffer_items_by_timestamp(
+        &self,
+        timestamp_secs: u64,
+    ) -> Result<u64, anyhow::Error> {
+        self.remove_user_buffer_items_by_timestamp_impl(USER_HOTORNOT_BUFFER_KEY, timestamp_secs)
+            .await
+    }
+
+    pub async fn remove_user_buffer_items_by_timestamp_impl(
+        &self,
+        key: &str,
+        timestamp_secs: u64,
+    ) -> Result<u64, anyhow::Error> {
+        let mut conn = self.redis_pool.get().await.unwrap();
+
+        let res = conn
+            .zrembyscore::<&str, u64, u64, u64>(key, 0, timestamp_secs)
+            .await?;
+
+        Ok(res)
+    }
 }
 
 #[cfg(test)]
@@ -513,6 +535,9 @@ mod tests {
             .await;
         assert!(res.is_ok());
 
+        let num_items = conn.zcard::<&str, u64>("test_key").await.unwrap();
+        assert_eq!(num_items, 100);
+
         let res_items = conn
             .zrevrange_withscores::<&str, Vec<(BufferItem, u64)>>("test_key", 0, 4)
             .await
@@ -537,5 +562,15 @@ mod tests {
         for item in items.iter() {
             println!("{:?}", item);
         }
+
+        // remove the items
+        let res = state
+            .remove_user_buffer_items_by_timestamp_impl("test_key", timestamp_secs)
+            .await;
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), 5);
+
+        let num_items = conn.zcard::<&str, u64>("test_key").await.unwrap();
+        assert_eq!(num_items, 95);
     }
 }
