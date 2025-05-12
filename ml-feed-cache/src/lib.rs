@@ -288,6 +288,15 @@ impl MLFeedCacheState {
     }
 
     pub async fn add_user_buffer_items(&self, items: Vec<BufferItem>) -> Result<(), anyhow::Error> {
+        self.add_user_buffer_items_impl(USER_HOTORNOT_BUFFER_KEY, items)
+            .await
+    }
+
+    pub async fn add_user_buffer_items_impl(
+        &self,
+        key: &str,
+        items: Vec<BufferItem>,
+    ) -> Result<(), anyhow::Error> {
         let mut conn = self.redis_pool.get().await.unwrap();
 
         let items = items
@@ -307,7 +316,7 @@ impl MLFeedCacheState {
         let chunk_size = 1000;
         for chunk in items.chunks(chunk_size) {
             let _res = conn
-                .zadd_multiple::<&str, u64, BufferItem, ()>(USER_HOTORNOT_BUFFER_KEY, chunk)
+                .zadd_multiple::<&str, u64, BufferItem, ()>(key, chunk)
                 .await?;
         }
 
@@ -318,14 +327,19 @@ impl MLFeedCacheState {
         &self,
         timestamp: u64,
     ) -> Result<Vec<BufferItem>, anyhow::Error> {
+        self.get_user_buffer_items_by_timestamp_impl(USER_HOTORNOT_BUFFER_KEY, timestamp)
+            .await
+    }
+
+    pub async fn get_user_buffer_items_by_timestamp_impl(
+        &self,
+        key: &str,
+        timestamp_secs: u64,
+    ) -> Result<Vec<BufferItem>, anyhow::Error> {
         let mut conn = self.redis_pool.get().await.unwrap();
 
         let items = conn
-            .zrevrangebyscore::<&str, u64, u64, Vec<BufferItem>>(
-                USER_HOTORNOT_BUFFER_KEY,
-                timestamp,
-                0,
-            )
+            .zrangebyscore::<&str, u64, u64, Vec<BufferItem>>(key, 0, timestamp_secs)
             .await?;
 
         Ok(items)
@@ -419,19 +433,6 @@ mod tests {
             .await;
         assert!(res.is_ok());
         assert!(!res.unwrap());
-
-        // delete the key
-        let _res = conn.del::<&str, ()>("test_key").await;
-        assert!(_res.is_ok());
-
-        let _res = conn.del::<&str, ()>("test_key_plain").await;
-        assert!(_res.is_ok());
-
-        let num_items = conn.zcard::<&str, u64>("test_key").await.unwrap();
-        assert_eq!(num_items, 0);
-
-        let num_items_plain = conn.zcard::<&str, u64>("test_key_plain").await.unwrap();
-        assert_eq!(num_items_plain, 0);
     }
 
     #[tokio::test]
@@ -477,12 +478,64 @@ mod tests {
         for item in items {
             println!("{:?}", item);
         }
+    }
 
-        // delete the key
+    #[tokio::test]
+    async fn test_add_user_buffer_items() {
+        let state = MLFeedCacheState::new().await;
+
+        let mut conn = state.redis_pool.get().await.unwrap();
+
         let _res = conn.del::<&str, ()>("test_key").await;
+        assert!(_res.is_ok());
+
+        let _res = conn.del::<&str, ()>(USER_HOTORNOT_BUFFER_KEY).await;
         assert!(_res.is_ok());
 
         let num_items = conn.zcard::<&str, u64>("test_key").await.unwrap();
         assert_eq!(num_items, 0);
+
+        let mut items = Vec::new();
+        for i in 0..100 {
+            items.push(BufferItem {
+                publisher_canister_id: "test_publisher_canister_id".to_string(),
+                user_canister_id: "test_user_canister_id".to_string(),
+                post_id: i as u64,
+                video_id: format!("test_video_id{}", i),
+                item_type: "video_viewed".to_string(),
+                timestamp: SystemTime::now() + Duration::from_secs(i * 100 as u64),
+                percent_watched: 50.0,
+            });
+        }
+
+        let res = state
+            .add_user_buffer_items_impl("test_key", items.clone())
+            .await;
+        assert!(res.is_ok());
+
+        let res_items = conn
+            .zrevrange_withscores::<&str, Vec<(BufferItem, u64)>>("test_key", 0, 4)
+            .await
+            .unwrap();
+        assert_eq!(res_items.len(), 5);
+
+        // print the items
+        for item in res_items.iter() {
+            println!("{:?}", item);
+        }
+
+        // check get_user_buffer_items_by_timestamp
+        let timestamp = items[4].timestamp;
+        let timestamp_secs = timestamp.duration_since(UNIX_EPOCH).unwrap().as_secs();
+        let items = state
+            .get_user_buffer_items_by_timestamp_impl("test_key", timestamp_secs)
+            .await
+            .unwrap();
+        assert_eq!(items.len(), 5);
+
+        // print the items
+        for item in items.iter() {
+            println!("{:?}", item);
+        }
     }
 }
