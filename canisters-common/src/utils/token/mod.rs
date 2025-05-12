@@ -209,15 +209,15 @@ impl<const A: bool> Canisters<A> {
                 let bal = bal_info.balance.clone();
 
                 Ok(Some(TokenMetadata {
-                    logo_b64: "/img/pumpdump/cents.webp".to_string(),
+                    logo_b64: "/img/hotornot/sats.webp".to_string(),
                     name: SATS_TOKEN_NAME.into(),
                     description: "".to_string(),
                     symbol: SATS_TOKEN_SYMBOL.into(),
                     balance: Some(TokenBalanceOrClaiming::new(TokenBalance::new(
-                        bal.into(),
+                        bal.clone().into(),
                         0,
                     ))),
-                    withdrawable_state: None,
+                    withdrawable_state: Some(WithdrawalState::Value(bal.into())),
                     fees: TokenBalance::new(0u32.into(), 0),
                     root: None,
                     ledger: Principal::anonymous(),
@@ -441,6 +441,7 @@ impl<const A: bool> Canisters<A> {
             return Ok(None);
         };
 
+        // TODO: for btc, show the icon from the design instead
         let decimals: u8 = decimals.0.try_into().unwrap();
         let mut res = TokenMetadata {
             logo_b64,
