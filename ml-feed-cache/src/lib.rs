@@ -1,11 +1,11 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use consts::{
-    MAX_GLOBAL_CACHE_LEN, MAX_SUCCESS_HISTORY_CACHE_LEN, MAX_USER_CACHE_LEN,
-    MAX_WATCH_HISTORY_CACHE_LEN,
+    MAX_GLOBAL_CACHE_LEN, MAX_HISTORY_PLAIN_POST_ITEM_CACHE_LEN, MAX_SUCCESS_HISTORY_CACHE_LEN,
+    MAX_USER_CACHE_LEN, MAX_WATCH_HISTORY_CACHE_LEN, USER_HOTORNOT_BUFFER_KEY,
 };
 use redis::AsyncCommands;
-use types::{MLFeedCacheHistoryItem, PostItem, get_history_item_score};
+use types::{get_history_item_score, BufferItem, MLFeedCacheHistoryItem, PlainPostItem, PostItem};
 
 pub mod consts;
 pub mod types;
@@ -55,7 +55,7 @@ impl MLFeedCacheState {
         // get num items in the list
         let num_items = conn.zcard::<&str, u64>(key).await?;
 
-        // if num items is greater than 5000, remove the oldest items till len is 5000 without while loop
+        // if num items is greater than MAX_WATCH_HISTORY_CACHE_LEN, remove the oldest items till len is MAX_WATCH_HISTORY_CACHE_LEN without while loop
         if num_items > MAX_WATCH_HISTORY_CACHE_LEN {
             let _res = conn
                 .zremrangebyrank::<&str, ()>(
@@ -124,6 +124,68 @@ impl MLFeedCacheState {
         let mut conn = self.redis_pool.get().await.unwrap();
         let num_items = conn.zcard::<&str, u64>(key).await?;
         Ok(num_items)
+    }
+
+    pub async fn add_user_history_plain_items(
+        &self,
+        key: &str,
+        items: Vec<MLFeedCacheHistoryItem>,
+    ) -> Result<(), anyhow::Error> {
+        let mut conn = self.redis_pool.get().await.unwrap();
+
+        let items = items
+            .iter()
+            .map(|item| {
+                (
+                    item.timestamp
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_secs(),
+                    PlainPostItem {
+                        canister_id: item.canister_id.clone(),
+                        post_id: item.post_id,
+                    },
+                )
+            })
+            .collect::<Vec<_>>();
+
+        // zadd_multiple in groups of 1000
+        let chunk_size = 1000;
+        for chunk in items.chunks(chunk_size) {
+            let _res = conn
+                .zadd_multiple::<&str, u64, PlainPostItem, ()>(key, chunk)
+                .await?;
+        }
+
+        // get num items in the list
+        let num_items = conn.zcard::<&str, u64>(key).await?;
+
+        // if num items is greater than MAX_HISTORY_PLAIN_POST_ITEM_CACHE_LEN, remove the oldest items till len is MAX_HISTORY_PLAIN_POST_ITEM_CACHE_LEN without while loop
+        if num_items > MAX_HISTORY_PLAIN_POST_ITEM_CACHE_LEN {
+            let _res = conn
+                .zremrangebyrank::<&str, ()>(
+                    key,
+                    0,
+                    (num_items - (MAX_HISTORY_PLAIN_POST_ITEM_CACHE_LEN + 1)) as isize,
+                )
+                .await?;
+        }
+
+        Ok(())
+    }
+
+    pub async fn is_user_history_plain_item_exists(
+        &self,
+        key: &str,
+        item: PlainPostItem,
+    ) -> Result<bool, anyhow::Error> {
+        let mut conn = self.redis_pool.get().await.unwrap();
+
+        let res = conn
+            .zscore::<&str, PlainPostItem, Option<f64>>(key, item)
+            .await?;
+
+        Ok(res.is_some())
     }
 
     pub async fn add_user_cache_items(
@@ -224,6 +286,50 @@ impl MLFeedCacheState {
         let num_items = conn.zcard::<&str, u64>(key).await?;
         Ok(num_items)
     }
+
+    pub async fn add_user_buffer_items(&self, items: Vec<BufferItem>) -> Result<(), anyhow::Error> {
+        let mut conn = self.redis_pool.get().await.unwrap();
+
+        let items = items
+            .iter()
+            .map(|item| {
+                (
+                    item.timestamp
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_secs(),
+                    item.clone(),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        // zadd_multiple in groups of 1000
+        let chunk_size = 1000;
+        for chunk in items.chunks(chunk_size) {
+            let _res = conn
+                .zadd_multiple::<&str, u64, BufferItem, ()>(USER_HOTORNOT_BUFFER_KEY, chunk)
+                .await?;
+        }
+
+        Ok(())
+    }
+
+    pub async fn get_user_buffer_items_by_timestamp(
+        &self,
+        timestamp: u64,
+    ) -> Result<Vec<BufferItem>, anyhow::Error> {
+        let mut conn = self.redis_pool.get().await.unwrap();
+
+        let items = conn
+            .zrevrangebyscore::<&str, u64, u64, Vec<BufferItem>>(
+                USER_HOTORNOT_BUFFER_KEY,
+                timestamp,
+                0,
+            )
+            .await?;
+
+        Ok(items)
+    }
 }
 
 #[cfg(test)]
@@ -241,11 +347,14 @@ mod tests {
         let _res = conn.del::<&str, ()>("test_key").await;
         assert!(_res.is_ok());
 
+        let _res = conn.del::<&str, ()>("test_key_plain").await;
+        assert!(_res.is_ok());
+
         let num_items = conn.zcard::<&str, u64>("test_key").await.unwrap();
         assert_eq!(num_items, 0);
 
         let mut items = Vec::new();
-        for i in 0..5010 {
+        for i in 0..MAX_WATCH_HISTORY_CACHE_LEN + 10 {
             items.push(MLFeedCacheHistoryItem {
                 video_id: format!("test_video_id{}", i),
                 item_type: "video_viewed".to_string(),
@@ -257,11 +366,22 @@ mod tests {
             });
         }
 
-        let res = state.add_user_watch_history_items("test_key", items).await;
+        let res = state
+            .add_user_watch_history_items("test_key", items.clone())
+            .await;
+        assert!(res.is_ok());
+
+        // add plain post items
+        let res = state
+            .add_user_history_plain_items("test_key_plain", items.clone())
+            .await;
         assert!(res.is_ok());
 
         let num_items = conn.zcard::<&str, u64>("test_key").await.unwrap();
-        assert_eq!(num_items, 5000);
+        assert_eq!(num_items, MAX_WATCH_HISTORY_CACHE_LEN);
+
+        let num_items_plain = conn.zcard::<&str, u64>("test_key_plain").await.unwrap();
+        assert_eq!(num_items_plain, MAX_HISTORY_PLAIN_POST_ITEM_CACHE_LEN);
 
         let items = conn
             .zrevrange_withscores::<&str, Vec<(MLFeedCacheHistoryItem, f64)>>("test_key", 0, 4)
@@ -274,12 +394,44 @@ mod tests {
             println!("{:?}", item);
         }
 
+        // check if the plain item exists
+        let res = state
+            .is_user_history_plain_item_exists(
+                "test_key_plain",
+                PlainPostItem {
+                    canister_id: "test_canister_id".to_string(),
+                    post_id: MAX_WATCH_HISTORY_CACHE_LEN + 10 - 1,
+                },
+            )
+            .await;
+        assert!(res.is_ok());
+        assert!(res.unwrap());
+
+        // check if the plain item does not exist
+        let res = state
+            .is_user_history_plain_item_exists(
+                "test_key_plain",
+                PlainPostItem {
+                    canister_id: "test_canister_id".to_string(),
+                    post_id: MAX_WATCH_HISTORY_CACHE_LEN + 10 + 1,
+                },
+            )
+            .await;
+        assert!(res.is_ok());
+        assert!(!res.unwrap());
+
         // delete the key
         let _res = conn.del::<&str, ()>("test_key").await;
         assert!(_res.is_ok());
 
+        let _res = conn.del::<&str, ()>("test_key_plain").await;
+        assert!(_res.is_ok());
+
         let num_items = conn.zcard::<&str, u64>("test_key").await.unwrap();
         assert_eq!(num_items, 0);
+
+        let num_items_plain = conn.zcard::<&str, u64>("test_key_plain").await.unwrap();
+        assert_eq!(num_items_plain, 0);
     }
 
     #[tokio::test]
@@ -295,7 +447,7 @@ mod tests {
         assert_eq!(num_items, 0);
 
         let mut items = Vec::new();
-        for i in 0..10100 {
+        for i in 0..MAX_SUCCESS_HISTORY_CACHE_LEN + 100 {
             items.push(MLFeedCacheHistoryItem {
                 video_id: format!("test_video_id{}", i),
                 item_type: "like_video".to_string(),
@@ -313,7 +465,7 @@ mod tests {
         assert!(res.is_ok());
 
         let num_items = conn.zcard::<&str, u64>("test_key").await.unwrap();
-        assert_eq!(num_items, 10000);
+        assert_eq!(num_items, MAX_SUCCESS_HISTORY_CACHE_LEN);
 
         let items = conn
             .zrevrange_withscores::<&str, Vec<(MLFeedCacheHistoryItem, f64)>>("test_key", 0, 4)
