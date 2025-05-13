@@ -13,4 +13,8 @@ pub enum WorkerError {
     PostNotFound,
     #[error("user does not have sufficient balance")]
     InsufficientFunds,
+    #[error("treasury is out of funds")]
+    TreasuryOutOfFunds,
+    #[error("treasury limit reached, try again tomorrow")]
+    TreasuryLimitReached,
 }

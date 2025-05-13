@@ -100,8 +100,40 @@ pub fn hon_game_vote_msg(request: VoteRequest) -> yral_identity::msg_builder::Me
 }
 
 #[cfg(feature = "client")]
-pub fn sign_vote_request(sender: &impl ic_agent::Identity, request: VoteRequest) -> yral_identity::Result<Signature> {
+pub fn sign_vote_request(
+    sender: &impl ic_agent::Identity,
+    request: VoteRequest,
+) -> yral_identity::Result<Signature> {
     use yral_identity::ic_agent::sign_message;
     let msg = hon_game_vote_msg(request.clone());
+    sign_message(sender, msg)
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct WithdrawRequest {
+    pub receiver: Principal,
+    pub amount: u128,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct HoNGameWithdrawReq {
+    pub request: WithdrawRequest,
+    pub signature: Signature,
+}
+
+pub fn hon_game_withdraw_msg(request: &WithdrawRequest) -> yral_identity::msg_builder::Message {
+    yral_identity::msg_builder::Message::default()
+        .method_name("hon_worker_game_withdraw".into())
+        .args((request.amount,))
+        .expect("Withdraw request should serialize")
+}
+
+#[cfg(feature = "client")]
+pub fn sign_withdraw_request(
+    sender: &impl ic_agent::Identity,
+    request: WithdrawRequest,
+) -> yral_identity::Result<Signature> {
+    use yral_identity::ic_agent::sign_message;
+    let msg = hon_game_withdraw_msg(&request);
     sign_message(sender, msg)
 }
