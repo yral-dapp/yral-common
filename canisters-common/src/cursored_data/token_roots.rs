@@ -168,7 +168,12 @@ impl<TkInfo: TokenInfoProvider + Send + Sync> CursoredDataProvider for TokenRoot
                             .canisters
                             .get_ck_metadata(Some(self.user_principal), ledger, index)
                             .await
+                            .inspect_err(|err| {
+                                log::error!("error when fetching ck metadata: {err:?}");
+                            })
                             .ok()??;
+
+                        log::info!("fetched ck token data for {}", metadata.name);
                         if metadata.balance
                             != Some(TokenBalanceOrClaiming::new(TokenBalance::new_cdao(
                                 0u8.into(),
