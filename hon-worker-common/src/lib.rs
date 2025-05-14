@@ -48,6 +48,7 @@ pub struct VoteRequest {
     pub post_id: u64,
     pub vote_amount: u128,
     pub direction: HotOrNot,
+    pub post_creator: Option<Principal>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
