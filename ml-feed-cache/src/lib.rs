@@ -47,7 +47,7 @@ impl MLFeedCacheState {
         // zadd_multiple in groups of 1000
         let chunk_size = 1000;
         for chunk in items.chunks(chunk_size) {
-            let _res = conn
+            conn
                 .zadd_multiple::<&str, f64, MLFeedCacheHistoryItem, ()>(key, chunk)
                 .await?;
         }
@@ -57,7 +57,7 @@ impl MLFeedCacheState {
 
         // if num items is greater than MAX_WATCH_HISTORY_CACHE_LEN, remove the oldest items till len is MAX_WATCH_HISTORY_CACHE_LEN without while loop
         if num_items > MAX_WATCH_HISTORY_CACHE_LEN {
-            let _res = conn
+            conn
                 .zremrangebyrank::<&str, ()>(
                     key,
                     0,
@@ -84,7 +84,7 @@ impl MLFeedCacheState {
         // zadd_multiple in groups of 1000
         let chunk_size = 1000;
         for chunk in items.chunks(chunk_size) {
-            let _res = conn
+            conn
                 .zadd_multiple::<&str, f64, MLFeedCacheHistoryItem, ()>(key, chunk)
                 .await?;
         }
@@ -93,7 +93,7 @@ impl MLFeedCacheState {
         let num_items = conn.zcard::<&str, u64>(key).await?;
 
         if num_items > MAX_SUCCESS_HISTORY_CACHE_LEN {
-            let _res = conn
+            conn
                 .zremrangebyrank::<&str, ()>(
                     key,
                     0,
@@ -152,7 +152,7 @@ impl MLFeedCacheState {
         // zadd_multiple in groups of 1000
         let chunk_size = 1000;
         for chunk in items.chunks(chunk_size) {
-            let _res = conn
+            conn
                 .zadd_multiple::<&str, u64, PlainPostItem, ()>(key, chunk)
                 .await?;
         }
@@ -162,7 +162,7 @@ impl MLFeedCacheState {
 
         // if num items is greater than MAX_HISTORY_PLAIN_POST_ITEM_CACHE_LEN, remove the oldest items till len is MAX_HISTORY_PLAIN_POST_ITEM_CACHE_LEN without while loop
         if num_items > MAX_HISTORY_PLAIN_POST_ITEM_CACHE_LEN {
-            let _res = conn
+            conn
                 .zremrangebyrank::<&str, ()>(
                     key,
                     0,
@@ -208,7 +208,7 @@ impl MLFeedCacheState {
         // zadd_multiple in groups of 1000
         let chunk_size = 1000;
         for chunk in items.chunks(chunk_size) {
-            let _res = conn
+            conn
                 .zadd_multiple::<&str, f64, PostItem, ()>(key, chunk)
                 .await?;
         }
@@ -217,7 +217,7 @@ impl MLFeedCacheState {
         let num_items = conn.zcard::<&str, u64>(key).await?;
 
         if num_items > MAX_USER_CACHE_LEN {
-            let _res = conn
+            conn
                 .zremrangebyrank::<&str, ()>(key, 0, (num_items - MAX_USER_CACHE_LEN - 1) as isize)
                 .await?;
         }
@@ -245,7 +245,7 @@ impl MLFeedCacheState {
         // zadd_multiple in groups of 1000
         let chunk_size = 1000;
         for chunk in items.chunks(chunk_size) {
-            let _res = conn
+            conn
                 .zadd_multiple::<&str, f64, PostItem, ()>(key, chunk)
                 .await?;
         }
@@ -254,7 +254,7 @@ impl MLFeedCacheState {
         let num_items = conn.zcard::<&str, u64>(key).await?;
 
         if num_items > MAX_GLOBAL_CACHE_LEN {
-            let _res = conn
+            conn
                 .zremrangebyrank::<&str, ()>(
                     key,
                     0,
@@ -315,7 +315,7 @@ impl MLFeedCacheState {
         // zadd_multiple in groups of 1000
         let chunk_size = 1000;
         for chunk in items.chunks(chunk_size) {
-            let _res = conn
+            conn
                 .zadd_multiple::<&str, u64, BufferItem, ()>(key, chunk)
                 .await?;
         }
@@ -392,10 +392,10 @@ mod tests {
         let mut items = Vec::new();
         for i in 0..MAX_WATCH_HISTORY_CACHE_LEN + 10 {
             items.push(MLFeedCacheHistoryItem {
-                video_id: format!("test_video_id{}", i),
+                video_id: format!("test_video_id{i}"),
                 item_type: "video_viewed".to_string(),
                 canister_id: "test_canister_id".to_string(),
-                post_id: i as u64,
+                post_id: i,
                 nsfw_probability: 0.0,
                 timestamp: SystemTime::now(),
                 percent_watched: i as f32 / 100.0,
@@ -427,7 +427,7 @@ mod tests {
 
         // print the items
         for item in items {
-            println!("{:?}", item);
+            println!("{item:?}");
         }
 
         // check if the plain item exists
@@ -472,12 +472,12 @@ mod tests {
         let mut items = Vec::new();
         for i in 0..MAX_SUCCESS_HISTORY_CACHE_LEN + 100 {
             items.push(MLFeedCacheHistoryItem {
-                video_id: format!("test_video_id{}", i),
+                video_id: format!("test_video_id{i}"),
                 item_type: "like_video".to_string(),
                 canister_id: "test_canister_id".to_string(),
-                post_id: i as u64,
+                post_id: i,
                 nsfw_probability: 0.0,
-                timestamp: SystemTime::now() + Duration::from_secs(i * 100 as u64),
+                timestamp: SystemTime::now() + Duration::from_secs(i * 100_u64),
                 percent_watched: 0.0,
             });
         }
@@ -498,7 +498,7 @@ mod tests {
 
         // print the items
         for item in items {
-            println!("{:?}", item);
+            println!("{item:?}");
         }
     }
 
@@ -522,10 +522,10 @@ mod tests {
             items.push(BufferItem {
                 publisher_canister_id: "test_publisher_canister_id".to_string(),
                 user_canister_id: "test_user_canister_id".to_string(),
-                post_id: i as u64,
-                video_id: format!("test_video_id{}", i),
+                post_id: i,
+                video_id: format!("test_video_id{i}"),
                 item_type: "video_viewed".to_string(),
-                timestamp: SystemTime::now() + Duration::from_secs(i * 100 as u64),
+                timestamp: SystemTime::now() + Duration::from_secs(i * 100_u64),
                 percent_watched: 50.0,
             });
         }
@@ -546,7 +546,7 @@ mod tests {
 
         // print the items
         for item in res_items.iter() {
-            println!("{:?}", item);
+            println!("{item:?}");
         }
 
         // check get_user_buffer_items_by_timestamp
@@ -560,7 +560,7 @@ mod tests {
 
         // print the items
         for item in items.iter() {
-            println!("{:?}", item);
+            println!("{item:?}");
         }
 
         // remove the items

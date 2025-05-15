@@ -2,7 +2,7 @@ use candid::{CandidType, Principal};
 use canisters_client::individual_user_template::{
     BetDirection, BetOutcomeForBetMaker, BettingStatus, PlaceBetArg, PlacedBetDetail, Result3,
 };
-use hon_worker_common::{GameInfo, GameInfoReq, HoNGameVoteReq, VoteRes, WorkerError};
+use hon_worker_common::{GameInfo, GameInfoReq};
 use serde::{Deserialize, Serialize};
 use web_time::Duration;
 use yral_identity::{ic_agent::sign_message, msg_builder::Message, Signature};

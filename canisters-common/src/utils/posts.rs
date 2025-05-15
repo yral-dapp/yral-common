@@ -119,10 +119,7 @@ impl<const A: bool> Canisters<A> {
             Ok(p) => p,
             Err(e) => {
                 log::warn!(
-                    "failed to get post details for {} {}: {}, skipping",
-                    user_canister.to_string(),
-                    post_id,
-                    e
+                    "failed to get post details for {user_canister} {post_id}: {e}, skipping"
                 );
                 return Ok(None);
             }
@@ -135,8 +132,7 @@ impl<const A: bool> Canisters<A> {
 
         let post_uuid = &post_details.video_uid;
         let req_url = format!(
-            "https://customer-2p3jflss4r4hmpnz.cloudflarestream.com/{}/manifest/video.m3u8",
-            post_uuid,
+            "https://customer-2p3jflss4r4hmpnz.cloudflarestream.com/{post_uuid}/manifest/video.m3u8",
         );
         let res = reqwest::Client::default().head(req_url).send().await;
         if res.is_err() || (res.is_ok() && res.unwrap().status() != 200) {

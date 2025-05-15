@@ -499,7 +499,7 @@ impl<const A: bool> Canisters<A> {
                 created_at_time: None,
             })
             .await?;
-        log::debug!("transfer res: {:?}", res);
+        log::debug!("transfer res: {res:?}");
 
         let destination_canister_id = self
             .get_individual_canister_by_user_principal(destination)
@@ -541,7 +541,7 @@ impl<const A: bool> Canisters<A> {
                 created_at_time: None,
             })
             .await?;
-        log::debug!("transfer res: {:?}", res);
+        log::debug!("transfer res: {res:?}");
         Ok(())
     }
 

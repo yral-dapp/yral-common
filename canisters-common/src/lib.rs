@@ -197,7 +197,7 @@ impl Canisters<true> {
             .map_err(|e| e.to_string())
         {
             Ok(Result22::Ok(_)) => (),
-            Err(e) | Ok(Result22::Err(e)) => log::warn!("Failed to update last access time: {}", e),
+            Err(e) | Ok(Result22::Err(e)) => log::warn!("Failed to update last access time: {e}"),
         }
 
         res.profile_details = Some(user.get_profile_details().await?.into());
