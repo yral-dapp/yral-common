@@ -558,6 +558,7 @@ service : (IndividualUserTemplateInitArgs) -> {
   add_token : (principal) -> (Result_2);
   bet_on_currently_viewing_post : (PlaceBetArg) -> (Result_3);
   bet_on_currently_viewing_post_v1 : (PlaceBetArg) -> (Result_3);
+  cents_token_balance_info : () -> (BalanceInfo) query;
   clear_snapshot : () -> ();
   delete_all_creator_token : () -> ();
   delete_post : (nat64) -> (Result);
@@ -566,31 +567,31 @@ service : (IndividualUserTemplateInitArgs) -> {
   download_snapshot : (nat64, nat64) -> (blob) query;
   get_bet_details_for_a_user_on_a_post : (principal, nat64) -> (Result_5) query;
   get_bet_details_for_a_user_on_a_post_v1 : (principal, nat64) -> (
-      Result_5,
-    ) query;
+    Result_5
+  ) query;
   get_entire_individual_post_detail_by_id : (nat64) -> (Result_6) query;
   get_hot_or_not_bet_details_for_this_post : (nat64) -> (BettingStatus) query;
   get_hot_or_not_bet_details_for_this_post_v1 : (nat64) -> (
-      BettingStatus,
-    ) query;
+    BettingStatus
+  ) query;
   get_hot_or_not_bets_placed_by_this_profile_with_pagination : (nat64) -> (
-      vec PlacedBetDetail,
-    ) query;
+    vec PlacedBetDetail
+  ) query;
   get_hot_or_not_bets_placed_by_this_profile_with_pagination_v1 : (nat64) -> (
-      vec PlacedBetDetail,
-    ) query;
+    vec PlacedBetDetail
+  ) query;
   get_individual_hot_or_not_bet_placed_by_this_profile : (principal, nat64) -> (
-      opt PlacedBetDetail,
-    ) query;
+    opt PlacedBetDetail
+  ) query;
   get_individual_hot_or_not_bet_placed_by_this_profile_v1 : (
-      principal,
-      nat64,
-    ) -> (opt PlacedBetDetail) query;
+    principal,
+    nat64,
+  ) -> (opt PlacedBetDetail) query;
   get_individual_post_details_by_id : (nat64) -> (PostDetailsForFrontend) query;
   get_last_access_time : () -> (Result_7) query;
   get_posts_of_this_user_profile_with_pagination_cursor : (nat64, nat64) -> (
-      Result_8,
-    ) query;
+    Result_8
+  ) query;
   get_profile_details : () -> (UserProfileDetailsForFrontend) query;
   get_profile_details_v2 : () -> (UserProfileDetailsForFrontendV2) query;
   get_rewarded_for_referral : (principal, principal) -> ();
@@ -599,22 +600,23 @@ service : (IndividualUserTemplateInitArgs) -> {
   get_stable_memory_size : () -> (nat64) query;
   get_success_history : () -> (Result_10) query;
   get_token_roots_of_this_user_with_pagination_cursor : (nat64, nat64) -> (
-      Result_11,
-    ) query;
+    Result_11
+  ) query;
   get_user_caniser_cycle_balance : () -> (nat) query;
   get_user_utility_token_transaction_history_with_pagination : (
-      nat64,
-      nat64,
-    ) -> (Result_12) query;
+    nat64,
+    nat64,
+  ) -> (Result_12) query;
   get_utility_token_balance : () -> (nat64) query;
   get_version : () -> (text) query;
   get_version_number : () -> (nat64) query;
   get_watch_history : () -> (Result_13) query;
   get_well_known_principal_value : (KnownPrincipalType) -> (
-      opt principal,
-    ) query;
+    opt principal
+  ) query;
   http_request : (HttpRequest) -> (HttpResponse) query;
   load_snapshot : () -> ();
+  load_snapshot_v2 : () -> ();
   net_earnings : () -> (nat) query;
   once_reenqueue_timers_for_pending_bet_outcomes : () -> (Result_14);
   pd_balance_info : () -> (BalanceInfo) query;
@@ -624,28 +626,30 @@ service : (IndividualUserTemplateInitArgs) -> {
   receive_and_save_snaphot : (nat64, blob) -> ();
   receive_bet_from_bet_makers_canister : (PlaceBetArg, principal) -> (Result_3);
   receive_bet_from_bet_makers_canister_v1 : (PlaceBetArg, principal) -> (
-      Result_3,
-    );
+    Result_3
+  );
   receive_bet_winnings_when_distributed : (nat64, BetOutcomeForBetMaker) -> ();
   receive_bet_winnings_when_distributed_v1 : (
-      nat64,
-      BetOutcomeForBetMaker,
-    ) -> ();
+    nat64,
+    BetOutcomeForBetMaker,
+  ) -> ();
   receive_data_from_hotornot : (principal, nat64, vec Post) -> (Result_16);
   reconcile_user_state : (vec PumpNDumpStateDiff) -> (Result);
   redeem_gdollr : (nat) -> (Result);
+  redeem_gdolr_v2 : (nat) -> (Result);
   request_airdrop : (principal, opt blob, nat, principal) -> (Result_17);
   return_cycles_to_user_index_canister : (opt nat) -> ();
   save_snapshot_json : () -> (nat32);
+  save_snapshot_json_v2 : () -> (nat32);
   send_creator_dao_stats_to_subnet_orchestrator : () -> (Result_18);
   set_controller_as_subnet_orchestrator : (principal) -> ();
   settle_neurons_fund_participation : (
-      SettleNeuronsFundParticipationRequest,
-    ) -> (SettleNeuronsFundParticipationResponse);
+    SettleNeuronsFundParticipationRequest
+  ) -> (SettleNeuronsFundParticipationResponse);
   stake_dollr_for_gdollr : (nat) -> (Result);
   transfer_token_to_user_canister : (principal, principal, opt blob, nat) -> (
-      Result_21,
-    );
+    Result_21
+  );
   transfer_tokens_and_posts : (principal, principal) -> (Result_16);
   update_last_access_time : () -> (Result_22);
   update_pd_onboarding_reward : (nat) -> (Result);
@@ -655,8 +659,8 @@ service : (IndividualUserTemplateInitArgs) -> {
   update_post_status : (nat64, PostStatus) -> ();
   update_post_toggle_like_status_by_caller : (nat64) -> (bool);
   update_profile_display_details : (UserProfileUpdateDetailsFromFrontend) -> (
-      Result_23,
-    );
+    Result_23
+  );
   update_profile_owner : (opt principal) -> (Result);
   update_referrer_details : (UserCanisterDetails) -> (Result_22);
   update_session_type : (SessionType) -> (Result_22);
@@ -664,4 +668,4 @@ service : (IndividualUserTemplateInitArgs) -> {
   update_watch_history : (WatchHistoryItem) -> (Result_22);
   update_well_known_principal : (KnownPrincipalType, principal) -> ();
   upgrade_creator_dao_governance_canisters : (blob) -> (Result);
-}
+};
