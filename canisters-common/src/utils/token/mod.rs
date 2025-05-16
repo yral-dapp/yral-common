@@ -459,18 +459,14 @@ impl<const A: bool> Canisters<A> {
             token_owner: None,
         };
 
-        // override logo and name
-        let (name, logo_b64) = match res.name.to_lowercase().as_str() {
-            "btc" => (
-                Some("Bitcoin".to_string()),
-                Some("/img/hotornot/bitcoin.svg".to_string()),
-            ),
-            _ => (None, None),
+        // TODO: rename btc to bitcoin without breaking the apps
+        // we want to be able to rename the name
+        // but that's error prone.
+        // override logo
+        let (logo_b64,) = match res.name.to_lowercase().as_str() {
+            "btc" => (Some("/img/hotornot/bitcoin.svg".to_string()),),
+            _ => (None,),
         };
-
-        if let Some(name) = name {
-            res.name = name;
-        }
 
         if let Some(logo_b64) = logo_b64 {
             res.logo_b64 = logo_b64;
