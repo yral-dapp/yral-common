@@ -463,7 +463,7 @@ impl<const A: bool> Canisters<A> {
         // we want to be able to rename the name
         // but that's error prone.
         // override logo
-        let (logo_b64) = match res.name.to_lowercase().as_str() {
+        let (logo_b64,) = match res.name.to_lowercase().as_str() {
             "btc" => (Some("/img/hotornot/bitcoin.svg".to_string()),),
             _ => (None,),
         };
