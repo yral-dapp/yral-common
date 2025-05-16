@@ -2,11 +2,12 @@ use candid::{CandidType, Principal};
 use canisters_client::individual_user_template::{
     BetDirection, BetOutcomeForBetMaker, BettingStatus, PlaceBetArg, PlacedBetDetail, Result3,
 };
+use hon_worker_common::{GameInfo, GameInfoReq};
 use serde::{Deserialize, Serialize};
 use web_time::Duration;
 use yral_identity::{ic_agent::sign_message, msg_builder::Message, Signature};
 
-use crate::{consts::CENTS_IN_E6S, Canisters, Error, Result};
+use crate::{consts::CENTS_IN_E6S, Canisters, Error, HonError, Result};
 
 use super::time::current_epoch;
 
@@ -22,6 +23,15 @@ pub enum VoteOutcome {
 pub enum VoteKind {
     Hot,
     Not,
+}
+
+impl From<VoteKind> for hon_worker_common::HotOrNot {
+    fn from(value: VoteKind) -> Self {
+        match value {
+            VoteKind::Hot => Self::Hot,
+            VoteKind::Not => Self::Not,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, CandidType)]
@@ -240,5 +250,26 @@ impl Canisters<true> {
             client.post(url).json(&req).send().await?.json().await?;
 
         Ok(betting_status)
+    }
+
+    pub async fn fetch_game_with_sats_info(
+        &self,
+        cloudflare_url: reqwest::Url,
+        request: GameInfoReq,
+    ) -> Result<Option<GameInfo>> {
+        let path = format!("/game_info/{}", self.user_principal());
+        let url = cloudflare_url.join(&path)?;
+
+        let client = reqwest::Client::new();
+        let res = client.post(url).json(&request).send().await?;
+
+        if !res.status().is_success() {
+            let err = res.text().await?;
+            return Err(Error::Hon(HonError::Backend(err)));
+        }
+
+        let info = res.json().await?;
+
+        Ok(info)
     }
 }

@@ -215,11 +215,7 @@ impl TxnHistory {
     ) -> Result<PageEntry<TxnInfoWallet>> {
         let total_transactions = self.get_latest_ledger_transaction(ledger_id).await?;
 
-        let start_index = if total_transactions > end as u64 {
-            total_transactions - end as u64
-        } else {
-            0
-        };
+        let start_index = total_transactions.saturating_sub(end as u64);
 
         let length = if total_transactions > start as u64 {
             total_transactions - start_index - start as u64

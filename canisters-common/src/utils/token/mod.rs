@@ -1,6 +1,8 @@
 use canisters_client::sns_swap::GetInitArg;
+use hon_worker_common::SatsBalanceInfo;
 use pump_n_dump_common::{rest::BalanceInfoResponse, WithdrawalState};
 use std::{fmt::Display, str::FromStr};
+use url::Url;
 
 use balance::{TokenBalance, TokenBalanceOrClaiming};
 use candid::{Nat, Principal};
@@ -12,7 +14,7 @@ use crate::{
         CKBTC_INDEX, CKBTC_LEDGER, CKUSDC_INDEX, CKUSDC_LEDGER, PUMP_AND_DUMP_WORKER_URL,
         SUPPORTED_NON_YRAL_TOKENS_ROOT,
     },
-    error, Canisters, PndError, Result, CENT_TOKEN_NAME,
+    error, Canisters, PndError, Result, CENT_TOKEN_NAME, SATS_TOKEN_NAME, SATS_TOKEN_SYMBOL,
 };
 use canisters_client::{
     sns_governance::{DissolveState, GetMetadataArg, ListNeurons},
@@ -51,6 +53,7 @@ pub enum RootType {
     USDC { ledger: Principal, index: Principal },
     COYNS,
     CENTS,
+    SATS,
     Other(Principal),
 }
 
@@ -81,6 +84,7 @@ impl Display for RootType {
             Self::USDC { .. } => f.write_str("usdc"),
             Self::COYNS => f.write_str("coyns"),
             Self::CENTS => f.write_str("cents"),
+            Self::SATS => f.write_str("sats"),
             Self::Other(principal) => f.write_str(&principal.to_text()),
         }
     }
@@ -94,6 +98,19 @@ async fn load_cents_balance(
         .expect("Url to be valid");
 
     let res: BalanceInfoResponse = reqwest::get(balance_url).await?.json().await?;
+
+    Ok(res)
+}
+
+async fn load_sats_balance(
+    user_principal: Principal,
+) -> std::result::Result<SatsBalanceInfo, PndError> {
+    let url: Url = hon_worker_common::WORKER_URL.parse().unwrap();
+    let balance_url = url
+        .join(&format!("/balance/{user_principal}"))
+        .expect("Url to be valid");
+
+    let res: SatsBalanceInfo = reqwest::get(balance_url).await?.json().await?;
 
     Ok(res)
 }
@@ -174,6 +191,33 @@ impl<const A: bool> Canisters<A> {
                     symbol: CENT_TOKEN_NAME.into(),
                     balance: Some(TokenBalanceOrClaiming::new(TokenBalance::new(bal, 6))),
                     withdrawable_state: Some(withdrawal_state),
+                    fees: TokenBalance::new(0u32.into(), 0),
+                    root: None,
+                    ledger: Principal::anonymous(),
+                    index: Principal::anonymous(),
+                    decimals: 8,
+                    is_nsfw: false,
+                    token_owner: None,
+                }))
+            }
+            RootType::SATS => {
+                let Some(user_principal) = user_principal else {
+                    return Ok(None);
+                };
+
+                let bal_info = load_sats_balance(user_principal).await?;
+                let bal = bal_info.balance.clone();
+
+                Ok(Some(TokenMetadata {
+                    logo_b64: "/img/hotornot/sats.webp".to_string(),
+                    name: SATS_TOKEN_NAME.into(),
+                    description: "".to_string(),
+                    symbol: SATS_TOKEN_SYMBOL.into(),
+                    balance: Some(TokenBalanceOrClaiming::new(TokenBalance::new(
+                        bal.clone().into(),
+                        0,
+                    ))),
+                    withdrawable_state: Some(WithdrawalState::Value(bal.into())),
                     fees: TokenBalance::new(0u32.into(), 0),
                     root: None,
                     ledger: Principal::anonymous(),
@@ -397,6 +441,7 @@ impl<const A: bool> Canisters<A> {
             return Ok(None);
         };
 
+        // TODO: for btc, show the icon from the design instead
         let decimals: u8 = decimals.0.try_into().unwrap();
         let mut res = TokenMetadata {
             logo_b64,
@@ -454,7 +499,7 @@ impl<const A: bool> Canisters<A> {
                 created_at_time: None,
             })
             .await?;
-        log::debug!("transfer res: {:?}", res);
+        log::debug!("transfer res: {res:?}");
 
         let destination_canister_id = self
             .get_individual_canister_by_user_principal(destination)
@@ -496,7 +541,7 @@ impl<const A: bool> Canisters<A> {
                 created_at_time: None,
             })
             .await?;
-        log::debug!("transfer res: {:?}", res);
+        log::debug!("transfer res: {res:?}");
         Ok(())
     }
 

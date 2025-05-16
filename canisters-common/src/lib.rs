@@ -33,6 +33,8 @@ pub mod utils;
 pub use error::*;
 use yral_metadata_types::UserMetadata;
 pub const CENT_TOKEN_NAME: &str = "CENTS";
+pub const SATS_TOKEN_NAME: &str = "Satoshi";
+pub const SATS_TOKEN_SYMBOL: &str = "SATS";
 
 #[derive(Clone)]
 pub struct Canisters<const AUTH: bool> {
@@ -195,7 +197,7 @@ impl Canisters<true> {
             .map_err(|e| e.to_string())
         {
             Ok(Result22::Ok(_)) => (),
-            Err(e) | Ok(Result22::Err(e)) => log::warn!("Failed to update last access time: {}", e),
+            Err(e) | Ok(Result22::Err(e)) => log::warn!("Failed to update last access time: {e}"),
         }
 
         res.profile_details = Some(user.get_profile_details().await?.into());

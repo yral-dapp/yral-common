@@ -12,6 +12,14 @@ pub enum PndError {
 }
 
 #[derive(Debug, Error)]
+pub enum HonError {
+    #[error("network error when accessing worker: {0}")]
+    Network(#[from] reqwest::Error),
+    #[error("error accessing game backend: {0}")]
+    Backend(String),
+}
+
+#[derive(Debug, Error)]
 pub enum Error {
     #[error("{0}")]
     Agent(#[from] ic_agent::AgentError),
@@ -35,6 +43,8 @@ pub enum Error {
     CborDe(#[from] ciborium::de::Error<io::Error>),
     #[error("{0}")]
     PndError(#[from] PndError),
+    #[error("{0}")]
+    Hon(#[from] HonError),
     #[error("{0}")]
     Url(#[from] url::ParseError),
     #[error("network error: {0}")]

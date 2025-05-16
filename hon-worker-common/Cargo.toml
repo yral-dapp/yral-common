@@ -1,0 +1,16 @@
+[package]
+name = "hon-worker-common"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+candid.workspace = true
+serde.workspace = true
+yral-identity = { workspace = true, default-features = false }
+ic-agent = { workspace = true, optional = true }
+num-bigint.workspace = true
+url.workspace = true
+thiserror.workspace = true
+
+[features]
+client = ["yral-identity/ic-agent", "dep:ic-agent"]
