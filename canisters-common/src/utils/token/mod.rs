@@ -209,7 +209,7 @@ impl<const A: bool> Canisters<A> {
                 let bal = bal_info.balance.clone();
 
                 Ok(Some(TokenMetadata {
-                    logo_b64: "/img/hotornot/sats.webp".to_string(),
+                    logo_b64: "/img/hotornot/sats.svg".to_string(),
                     name: SATS_TOKEN_NAME.into(),
                     description: "".to_string(),
                     symbol: SATS_TOKEN_SYMBOL.into(),
@@ -458,6 +458,24 @@ impl<const A: bool> Canisters<A> {
             is_nsfw: false,
             token_owner: None,
         };
+
+        // override logo and name
+        let (name, logo_b64) = match res.name.to_lowercase().as_str() {
+            "btc" => (
+                Some("Bitcoin".to_string()),
+                Some("/img/hotornot/bitcoin.svg".to_string()),
+            ),
+            _ => (None, None),
+        };
+
+        if let Some(name) = name {
+            res.name = name;
+        }
+
+        if let Some(logo_b64) = logo_b64 {
+            res.logo_b64 = logo_b64;
+        }
+
         let Some(user_principal) = user_principal else {
             return Ok(Some(res));
         };
