@@ -5,10 +5,46 @@ pub use error::*;
 use candid::{CandidType, Principal};
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
-use yral_identity::Signature;
+use yral_identity::{Signature, ic_agent::sign_message, msg_builder::Message};
 
 pub const WORKER_URL: &str = "https://yral-hot-or-not.go-bazzinga.workers.dev/";
 pub type WorkerResponse<T> = Result<T, WorkerError>;
+
+#[derive(Serialize, Deserialize, Clone, Debug, CandidType)]
+pub struct ClaimRequest {
+    /// User's principal id
+    user_principal: Principal,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct VerifiableClaimRequest {
+    sender: Principal,
+    request: ClaimRequest,
+    signature: Signature,
+}
+
+pub fn verifiable_claim_request_message(args: ClaimRequest) -> Message {
+    Message::default()
+        .method_name("claim_sats_airdrop_request".into())
+        .args((args,))
+        .expect("Place bet request should serialize")
+}
+
+impl VerifiableClaimRequest {
+    pub fn new(
+        sender: &impl ic_agent::Identity,
+        request: ClaimRequest,
+    ) -> yral_identity::Result<Self> {
+        let message = verifiable_claim_request_message(request.clone());
+        let signature = sign_message(sender, message)?;
+
+        Ok(Self {
+            sender: sender.sender().expect("signing was succesful"),
+            request,
+            signature,
+        })
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SatsBalanceInfo {
