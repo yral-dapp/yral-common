@@ -12,9 +12,8 @@ pub(crate) mod sns_swap_pb;
 fn divide_perfectly(field_name: &str, dividend: u64, divisor: u64) -> Result<u64, String> {
     match dividend.checked_rem(divisor) {
         None => Err(format!(
-            "Attempted to divide by zero while validating {}. \
+            "Attempted to divide by zero while validating {field_name}. \
                  (This is likely due to an internal bug.)",
-            field_name,
         )),
 
         Some(0) => Ok(dividend.saturating_div(divisor)),
@@ -22,9 +21,8 @@ fn divide_perfectly(field_name: &str, dividend: u64, divisor: u64) -> Result<u64
         Some(remainder) => {
             assert_ne!(remainder, 0);
             Err(format!(
-                "{} is supposed to contain a value that is evenly divisible by {}, \
-                 but it contains {}, which leaves a remainder of {}.",
-                field_name, divisor, dividend, remainder,
+                "{field_name} is supposed to contain a value that is evenly divisible by {divisor}, \
+                 but it contains {dividend}, which leaves a remainder of {remainder}.",
             ))
         }
     }
@@ -179,23 +177,20 @@ impl TryFrom<CreateServiceNervousSystem> for SnsInitPayload {
         // Check if the deprecated fields are set.
         if let Some(neurons_fund_investment_icp) = swap_parameters.neurons_fund_investment_icp {
             defects.push(format!(
-                "neurons_fund_investment_icp ({:?}) is deprecated; please set \
+                "neurons_fund_investment_icp ({neurons_fund_investment_icp:?}) is deprecated; please set \
                     neurons_fund_participation instead.",
-                neurons_fund_investment_icp,
             ));
         }
         if let Some(minimum_icp) = swap_parameters.minimum_icp {
             defects.push(format!(
-                "minimum_icp ({:?}) is deprecated; please set \
+                "minimum_icp ({minimum_icp:?}) is deprecated; please set \
                     min_direct_participation_icp_e8s instead.",
-                minimum_icp,
             ));
         };
         if let Some(maximum_icp) = swap_parameters.maximum_icp {
             defects.push(format!(
-                "maximum_icp ({:?}) is deprecated; please set \
+                "maximum_icp ({maximum_icp:?}) is deprecated; please set \
                     max_direct_participation_icp_e8s instead.",
-                maximum_icp,
             ));
         };
 
@@ -396,9 +391,8 @@ impl TryFrom<create_sns::initial_token_distribution::DeveloperDistribution>
                     Ok(ok) => Some(ok),
                     Err(err) => {
                         defects.push(format!(
-                            "Failed to convert element at index {} in field \
-                             `developer_neurons`: {}",
-                            i, err,
+                            "Failed to convert element at index {i} in field \
+                             `developer_neurons`: {err}",
                         ));
                         None
                     }
@@ -516,15 +510,11 @@ impl CreateServiceNervousSystem {
                 .find(|&timestamp| timestamp > swap_approved_timestamp_seconds + ONE_DAY_SECONDS)
                 .ok_or(format!(
                     "Unable to find a swap start time after the swap was approved. \
-                     swap_approved_timestamp_seconds = {}, \
-                     midnight_after_swap_approved_timestamp_seconds = {}, \
-                     start_time_of_day = {}, \
-                     duration = {} \
+                     swap_approved_timestamp_seconds = {swap_approved_timestamp_seconds}, \
+                     midnight_after_swap_approved_timestamp_seconds = {midnight_after_swap_approved_timestamp_seconds}, \
+                     start_time_of_day = {start_time_of_day}, \
+                     duration = {duration} \
                      This is probably a bug.",
-                    swap_approved_timestamp_seconds,
-                    midnight_after_swap_approved_timestamp_seconds,
-                    start_time_of_day,
-                    duration,
                 ))?
         };
 

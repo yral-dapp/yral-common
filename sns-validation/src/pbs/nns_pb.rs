@@ -74,7 +74,7 @@ pub struct Decimal {
 impl GlobalTimeOfDay {
     pub fn from_hh_mm(hh: u64, mm: u64) -> Result<Self, String> {
         if hh >= 23 || mm >= 60 {
-            return Err(format!("invalid time of day ({}:{})", hh, mm));
+            return Err(format!("invalid time of day ({hh}:{mm})"));
         }
         let seconds_after_utc_midnight = Some(hh * 3600 + mm * 60);
         Ok(Self {
