@@ -285,8 +285,7 @@ impl<'a> AliasToPrincipalId<'a> {
                 Principal::from_str(string)
                     .map_err(|err| {
                         defects.push(format!(
-                            "Unable to parse PrincipalId ({:?}) in {}. Reason: {}",
-                            string, field_name, err,
+                            "Unable to parse PrincipalId ({string:?}) in {field_name}. Reason: {err}",
                         ))
                     })
                     .unwrap_or(Principal::anonymous())
@@ -399,8 +398,7 @@ impl SnsConfigurationFile {
         }
         if let Err(err) = SnsInitPayload::try_from(result.clone()) {
             return Err(format!(
-                "Unable to convert configuration file to proposal: {}",
-                err,
+                "Unable to convert configuration file to proposal: {err}",
             ));
         }
 
@@ -532,9 +530,8 @@ impl Neuron {
         let controller = Principal::from_str(principal)
             .map_err(|err| {
                 defects.push(format!(
-                    "Unable to parse PrincipalId in distribution.neurons ({:?}). \
-                     err: {:#?}",
-                    principal, err,
+                    "Unable to parse PrincipalId in distribution.neurons ({principal:?}). \
+                     err: {err:#?}",
                 ))
             })
             .unwrap_or(Principal::anonymous());

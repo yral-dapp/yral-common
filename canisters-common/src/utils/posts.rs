@@ -12,7 +12,7 @@ use crate::{Canisters, Result};
 
 use super::profile::propic_from_principal;
 
-#[derive(Clone, PartialEq, PartialOrd, Debug, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct PostDetails {
     pub canister_id: Principal, // canister id of the publishing canister.
     pub post_id: u64,
@@ -31,6 +31,12 @@ pub struct PostDetails {
     pub hot_or_not_feed_ranking_score: Option<u64>,
     pub created_at: Duration,
     pub nsfw_probability: f32,
+}
+
+impl PartialOrd for PostDetails {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 impl Ord for PostDetails {
