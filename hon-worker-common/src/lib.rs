@@ -27,7 +27,7 @@ pub fn verifiable_claim_request_message(args: ClaimRequest) -> Message {
     Message::default()
         .method_name("claim_sats_airdrop_request".into())
         .args((args,))
-        .expect("Place bet request should serialize")
+        .expect("Request must serialize")
 }
 
 impl VerifiableClaimRequest {
