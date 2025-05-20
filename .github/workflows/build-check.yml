@@ -19,3 +19,6 @@ jobs:
       - name: compile check
         run: |
           cargo check --all-features
+      - name: clippy check
+        run: |
+          cargo clippy --no-deps --all-features --release -- -Dwarnings
