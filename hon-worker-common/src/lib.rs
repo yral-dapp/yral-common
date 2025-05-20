@@ -31,6 +31,7 @@ pub fn verifiable_claim_request_message(args: ClaimRequest) -> Message {
 }
 
 impl VerifiableClaimRequest {
+    #[cfg(feature = "client")]
     pub fn new(
         sender: &impl ic_agent::Identity,
         request: ClaimRequest,
