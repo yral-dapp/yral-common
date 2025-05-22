@@ -5,7 +5,7 @@ pub use error::*;
 use candid::{CandidType, Principal};
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
-use yral_identity::{Signature, ic_agent::sign_message, msg_builder::Message};
+use yral_identity::{Signature, msg_builder::Message};
 
 // TODO switch back to prod before merge
 pub const WORKER_URL: &str = "https://yral-hot-or-not-preview.go-bazzinga.workers.dev/";
@@ -16,15 +16,14 @@ pub type WorkerResponse<T> = Result<T, WorkerError>;
 pub struct ClaimRequest {
     /// User's principal id
     pub user_principal: Principal,
-
-    /// The amount of airdrop to be claimed in sats (e0s)
-    pub amount: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct VerifiableClaimRequest {
     pub sender: Principal,
     pub request: ClaimRequest,
+    /// The amount of airdrop to be claimed in sats (e0s)
+    pub amount: u64,
     pub signature: Signature,
 }
 
@@ -33,23 +32,6 @@ pub fn verifiable_claim_request_message(args: ClaimRequest) -> Message {
         .method_name("claim_sats_airdrop_request".into())
         .args((args,))
         .expect("Request must serialize")
-}
-
-impl VerifiableClaimRequest {
-    #[cfg(feature = "client")]
-    pub fn new(
-        sender: &impl ic_agent::Identity,
-        request: ClaimRequest,
-    ) -> yral_identity::Result<Self> {
-        let message = verifiable_claim_request_message(request.clone());
-        let signature = sign_message(sender, message)?;
-
-        Ok(Self {
-            sender: sender.sender().expect("signing was succesful"),
-            request,
-            signature,
-        })
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -149,6 +131,16 @@ pub fn sign_vote_request(
 ) -> yral_identity::Result<Signature> {
     use yral_identity::ic_agent::sign_message;
     let msg = hon_game_vote_msg(request.clone());
+    sign_message(sender, msg)
+}
+
+#[cfg(feature = "client")]
+pub fn sign_claim_request(
+    sender: &impl ic_agent::Identity,
+    request: ClaimRequest,
+) -> yral_identity::Result<Signature> {
+    use yral_identity::ic_agent::sign_message;
+    let msg = verifiable_claim_request_message(request.clone());
     sign_message(sender, msg)
 }
 
