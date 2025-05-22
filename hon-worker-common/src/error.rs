@@ -23,6 +23,4 @@ pub enum WorkerError {
 pub enum AirdropClaimError {
     #[error("Invalid Signature")]
     InvalidSignature,
-    #[error("Airdrop has already been claimed")]
-    AlreadyClaimed,
 }
