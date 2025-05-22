@@ -7,7 +7,9 @@ use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use yral_identity::{Signature, ic_agent::sign_message, msg_builder::Message};
 
-pub const WORKER_URL: &str = "https://yral-hot-or-not.go-bazzinga.workers.dev/";
+// TODO switch back to prod before merge
+pub const WORKER_URL: &str = "https://yral-hot-or-not-preview.go-bazzinga.workers.dev/";
+// pub const WORKER_URL: &str = "https://yral-hot-or-not.go-bazzinga.workers.dev/";
 pub type WorkerResponse<T> = Result<T, WorkerError>;
 
 #[derive(Serialize, Deserialize, Clone, Debug, CandidType)]
