@@ -138,3 +138,29 @@ pub fn sign_withdraw_request(
     let msg = hon_game_withdraw_msg(&request);
     sign_message(sender, msg)
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ReferralItem {
+    pub referrer: Principal,
+    pub referee: Principal,
+    pub amount: u64,
+    pub created_at: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ReferralReq {
+    pub referrer: Principal,
+    pub referee: Principal,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct PaginatedReferralsReq {
+    pub cursor: Option<u64>,
+    pub limit: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct PaginatedReferralsRes {
+    pub items: Vec<ReferralItem>,
+    pub cursor: Option<u64>,
+}
