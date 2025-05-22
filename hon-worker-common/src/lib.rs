@@ -14,6 +14,9 @@ pub type WorkerResponse<T> = Result<T, WorkerError>;
 pub struct ClaimRequest {
     /// User's principal id
     user_principal: Principal,
+
+    /// The amount of airdrop to be claimed in sats (e0s)
+    amount: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
