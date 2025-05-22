@@ -18,3 +18,9 @@ pub enum WorkerError {
     #[error("treasury limit reached, try again tomorrow")]
     TreasuryLimitReached,
 }
+
+#[derive(Serialize, Deserialize, Debug, Error)]
+pub enum AirdropClaimError {
+    #[error("Invalid Signature")]
+    InvalidSignature,
+}
