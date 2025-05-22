@@ -21,9 +21,9 @@ pub struct ClaimRequest {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct VerifiableClaimRequest {
-    sender: Principal,
-    request: ClaimRequest,
-    signature: Signature,
+    pub sender: Principal,
+    pub request: ClaimRequest,
+    pub signature: Signature,
 }
 
 pub fn verifiable_claim_request_message(args: ClaimRequest) -> Message {
